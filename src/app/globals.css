@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-cormorant: "Cormorant Garamond", serif;
+    --font-inter: "Inter", system-ui, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #fefbef;
+    color: #545454;
+    font-family: var(--font-inter);
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  ::selection {
+    background-color: #545454;
+    color: #fefbef;
+  }
+}
+
+@layer components {
+  .container-nyx {
+    @apply mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-16;
+  }
+
+  .heading-display {
+    @apply font-serif font-light tracking-tighter leading-[0.95];
+  }
+
+  .label-mono {
+    @apply uppercase tracking-widest text-xs;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-nyx-ink text-nyx-bg px-8 py-4 text-sm uppercase tracking-widest transition-all duration-300 hover:bg-nyx-muted active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 border border-nyx-ink text-nyx-ink px-8 py-4 text-sm uppercase tracking-widest transition-all duration-300 hover:bg-nyx-ink hover:text-nyx-bg;
+  }
+
+  .link-underline {
+    @apply relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-current after:transition-transform after:duration-500 hover:after:origin-left hover:after:scale-x-100;
+  }
+}

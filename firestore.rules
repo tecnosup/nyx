@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['slug', 'name', 'description', 'category', 'price', 'images', 'sizes', 'status'])
+        && data.slug is string && data.slug.size() >= 3
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.description is string && data.description.size() <= 2000
+        && data.category in ['camisetas', 'moletons', 'calcas', 'jaquetas', 'acessorios']
+        && data.price is number && data.price >= 0 && data.price <= 100000
+        && data.images is list && data.images.size() > 0 && data.images.size() <= 8
+        && data.sizes is list && data.sizes.size() <= 6
+        && data.status in ['draft', 'published']
+        && (!('dropId' in data) || data.dropId == null || data.dropId is string);
+    }
+
+    function isValidDrop(data) {
+      return data.keys().hasAll(['slug', 'name', 'description', 'releaseDate', 'status'])
+        && data.slug is string && data.slug.size() >= 3
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.description is string && data.description.size() <= 2000
+        && data.releaseDate is number
+        && data.status in ['upcoming', 'active', 'archived'];
+    }
+
+    match /products/{productId} {
+      allow read: if resource.data.status == 'published' || isAdmin();
+      allow create: if isAdmin() && isValidProduct(request.resource.data);
+      allow update: if isAdmin() && isValidProduct(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /drops/{dropId} {
+      allow read: if resource.data.status in ['active', 'archived'] || isAdmin();
+      allow create: if isAdmin() && isValidDrop(request.resource.data);
+      allow update: if isAdmin() && isValidDrop(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

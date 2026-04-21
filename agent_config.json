@@ -1,0 +1,54 @@
+{
+  "agents": {
+    "research": {
+      "name": "Research Specialist",
+      "region": "Cruzeiro",
+      "focus_areas": [
+        "Retail & E-commerce",
+        "Manufacturing",
+        "Services & Consulting",
+        "Healthcare",
+        "Education",
+        "Technology"
+      ],
+      "data_sources": [
+        "web_search",
+        "business_directories",
+        "market_reports",
+        "social_media",
+        "news_articles"
+      ]
+    },
+    "analysis": {
+      "name": "Business Analyst",
+      "solution_types": [
+        "Operational Efficiency",
+        "Digital Transformation",
+        "Customer Experience",
+        "Cost Optimization",
+        "Growth Strategy",
+        "Risk Management"
+      ],
+      "analysis_depth": "comprehensive"
+    },
+    "execution": {
+      "name": "Sales & Execution Manager",
+      "proposal_template": "professional",
+      "average_contract_timeline": 30,
+      "contract_closure_steps": [
+        "Initial Discovery",
+        "Solution Presentation",
+        "Proposal Review",
+        "Negotiation",
+        "Contract Signing",
+        "Onboarding"
+      ]
+    }
+  },
+  "workflow": {
+    "parallel_execution": false,
+    "sequential_flow": true,
+    "feedback_loops": true,
+    "max_iterations": 1
+  }
+}

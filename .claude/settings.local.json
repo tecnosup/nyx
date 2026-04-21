@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv /c/Users/cardo/nyx/src/app/public \"/c/Users/cardo/nyx/src/app/\\(public\\)\")",
+      "Bash(mv /c/Users/cardo/nyx/src/components/shared/Hero.tsx /c/Users/cardo/nyx/src/components/landing/Hero.tsx)",
+      "Bash(echo \"---MARKER---\")",
+      "Bash(curl -s -o /tmp/nyx-home.html -w \"HTTP %{http_code}\\\\nSIZE %{size_download}\\\\n\" http://localhost:3000/)",
+      "Read(//tmp/**)",
+      "Bash(npm install *)",
+      "Bash(tasklist //FI \"PID eq 19024\")",
+      "Bash(powershell -Command \"Get-Process -Id 19024 | Select-Object Id,ProcessName,Path,StartTime | Format-List\")",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/produtos)",
+      "Bash(curl -s http://localhost:3000/produtos/camiseta-noir-oversized)",
+      "Bash(grep -oE \"Camiseta Noir Oversized|Comprar pelo WhatsApp|Selecione um tamanho|Algodão japonês|R\\\\\\\\\\\\$ 289|Tamanho|Radar Tóquio|Você também pode gostar\")",
+      "Bash(curl -s http://localhost:3000/produtos/categoria/moletons)",
+      "Bash(curl -s http://localhost:3000/drops)",
+      "Bash(curl -s http://localhost:3000/drops/silencio-urbano)"
+    ]
+  }
+}
