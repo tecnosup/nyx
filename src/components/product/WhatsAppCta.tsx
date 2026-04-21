@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/constants";
-import { formatPrice } from "@/lib/utils";
 import {
   availableSizes,
   stockLevel,
@@ -14,21 +14,6 @@ import { SizeSelector } from "./SizeSelector";
 
 interface Props {
   product: Product;
-}
-
-function buildWhatsAppMessage(product: Product, size: ProductSize): string {
-  const lines = [
-    `Olá! Tenho interesse em uma peça da NYX:`,
-    ``,
-    `*${product.name}*`,
-    `Tamanho: ${size}`,
-    `Valor: ${formatPrice(product.price)}`,
-    ``,
-    `Link: ${SITE_CONFIG.url}/produtos/${product.slug}`,
-    ``,
-    `Pode me passar forma de pagamento e prazo de entrega?`,
-  ];
-  return lines.join("\n");
 }
 
 export function WhatsAppCta({ product }: Props) {
@@ -59,10 +44,9 @@ export function WhatsAppCta({ product }: Props) {
     );
   }
 
-  const message = size ? buildWhatsAppMessage(product, size) : "";
   const href = size
-    ? `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`
-    : undefined;
+    ? `/checkout?slug=${encodeURIComponent(product.slug)}&size=${encodeURIComponent(size)}`
+    : null;
 
   return (
     <div className="space-y-6">
@@ -73,15 +57,10 @@ export function WhatsAppCta({ product }: Props) {
       />
 
       {href ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-primary w-full"
-        >
-          <MessageCircle size={18} />
-          <span>Comprar pelo WhatsApp</span>
-        </a>
+        <Link href={href} className="btn-primary w-full">
+          <span>Continuar para checkout</span>
+          <ArrowRight size={18} />
+        </Link>
       ) : (
         <button
           type="button"
@@ -93,8 +72,7 @@ export function WhatsAppCta({ product }: Props) {
       )}
 
       <p className="text-xs text-nyx-muted leading-relaxed">
-        Pagamento e frete combinados diretamente pelo WhatsApp. Envios para
-        todo o Brasil.
+        Pedido finalizado pelo WhatsApp. Pagamento e frete combinados na conversa.
       </p>
     </div>
   );

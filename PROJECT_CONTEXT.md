@@ -25,7 +25,7 @@ NYX é uma landing page + e-commerce de streetwear da cliente **Giovana**, que t
   - Títulos: **Cormorant Garamond** (serifada elegante, peso 300–700)
   - Corpo: **Inter** (sans-serif)
 - **Tom de voz:** streetwear, minimalista, moda
-- **Referência visual:** https://lojabasique.com.br/ (grid limpo, muito whitespace, foco no produto)
+- **Referência visual:** https://lojabasique.com.br/ (grid limpo, foco no produto)
 
 ## Stack técnica
 
