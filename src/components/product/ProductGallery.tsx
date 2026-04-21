@@ -39,14 +39,14 @@ export function ProductGallery({ images, alt }: Props) {
         ))}
       </div>
 
-      <div className="order-2 md:order-1 relative aspect-[4/5] bg-nyx-cream overflow-hidden">
+      <div className="order-2 md:order-1 relative aspect-[4/5] product-stage overflow-hidden">
         <Image
           src={current}
           alt={alt}
           fill
           sizes="(max-width: 768px) 100vw, 60vw"
           priority
-          className="object-cover"
+          className="object-contain p-8 md:p-12"
         />
       </div>
     </div>

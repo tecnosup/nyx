@@ -7,17 +7,25 @@ interface Props {
   sizes: SizeStock[];
   selected: ProductSize | null;
   onSelect: (size: ProductSize) => void;
+  hideLabel?: boolean;
 }
 
-export function SizeSelector({ sizes, selected, onSelect }: Props) {
+export function SizeSelector({ sizes, selected, onSelect, hideLabel }: Props) {
   const byOrder = [...sizes].sort(
     (a, b) => SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size)
   );
 
   return (
     <div>
-      <p className="label-mono text-nyx-muted mb-4">Tamanho</p>
-      <div className="flex flex-wrap gap-2">
+      {!hideLabel && (
+        <div className="flex items-center justify-between mb-3">
+          <p className="label-mono text-nyx-muted">Tamanho</p>
+          {selected && (
+            <p className="label-mono text-nyx-ink">{selected}</p>
+          )}
+        </div>
+      )}
+      <div className="grid grid-cols-4 gap-2">
         {byOrder.map((s) => {
           const disabled = s.quantity === 0;
           const isLow = s.quantity > 0 && s.quantity <= 2;
@@ -29,13 +37,10 @@ export function SizeSelector({ sizes, selected, onSelect }: Props) {
               disabled={disabled}
               onClick={() => onSelect(s.size)}
               className={cn(
-                "label-mono px-5 py-3 border transition-all",
-                disabled &&
-                  "border-nyx-line text-nyx-soft line-through cursor-not-allowed",
-                !disabled &&
-                  !isSelected &&
-                  "border-nyx-line text-nyx-ink hover:border-nyx-ink",
-                isSelected && "border-nyx-ink bg-nyx-ink text-nyx-bg"
+                "size-pill relative",
+                disabled && "size-pill-disabled",
+                !disabled && !isSelected && "hover:border-nyx-ink",
+                isSelected && "size-pill-active"
               )}
               aria-pressed={isSelected}
               aria-label={
@@ -45,9 +50,9 @@ export function SizeSelector({ sizes, selected, onSelect }: Props) {
               }
             >
               <span>{s.size}</span>
-              {isLow && !disabled && (
-                <span className="ml-2 text-[10px] opacity-70">
-                  {s.quantity} rest.
+              {isLow && !disabled && !isSelected && (
+                <span className="absolute -top-1.5 -right-1 bg-nyx-ink text-nyx-bg text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                  {s.quantity}
                 </span>
               )}
             </button>

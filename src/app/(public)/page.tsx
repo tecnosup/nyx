@@ -20,25 +20,22 @@ export default async function HomePage() {
     listProducts(),
   ]);
 
+  const featured = products[0] ?? null;
+  const dropLabel = active
+    ? `${active.name} — Disponível agora`
+    : "Drop em preparo";
+
   return (
     <>
-      <Hero />
+      <Hero featured={featured} dropLabel={dropLabel} />
 
       <FloatingMarquee
         products={products}
-        label="No drop / passando agora"
-        speed={50}
+        label="@nyx.store — No drop agora"
+        speed={55}
       />
 
       <Manifesto />
-
-      {products.length > 3 && (
-        <FloatingMarquee
-          products={[...products].reverse()}
-          direction="right"
-          speed={55}
-        />
-      )}
 
       <section id="drops" className="py-24 md:py-32 border-t border-nyx-line">
         <div className="container-nyx text-center">

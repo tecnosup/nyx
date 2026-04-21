@@ -1,50 +1,55 @@
 import Link from "next/link";
 import { CATEGORY_LABELS, type Product, type Drop } from "@/lib/types";
-import { formatPrice } from "@/lib/utils";
-import { StockBadge } from "@/components/catalog/StockBadge";
 
 interface Props {
   product: Product;
   drop?: Drop | null;
 }
 
+function buildBullets(product: Product, drop?: Drop | null): string[] {
+  const bullets: string[] = [];
+  if (product.isLimited) bullets.push("Edição limitada · peça numerada");
+  bullets.push(CATEGORY_LABELS[product.category]);
+  if (drop) bullets.push(`Drop: ${drop.name}`);
+  bullets.push("Envio após confirmação no WhatsApp");
+  bullets.push("Pagamento combinado: Pix, cartão ou transferência");
+  return bullets;
+}
+
 export function ProductInfo({ product, drop }: Props) {
+  const bullets = buildBullets(product, drop);
+
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <Link
-            href={`/produtos/categoria/${product.category}`}
-            className="label-mono text-nyx-muted hover:text-nyx-ink transition-colors"
-          >
-            {CATEGORY_LABELS[product.category]}
-          </Link>
-          <StockBadge product={product} />
-        </div>
-
-        <h1 className="font-serif text-4xl md:text-5xl text-nyx-ink leading-tight">
+        <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl text-nyx-ink leading-[1.05] tracking-tighter">
           {product.name}
         </h1>
 
-        <p className="font-serif text-2xl text-nyx-ink mt-6">
-          {formatPrice(product.price)}
-        </p>
+        <ul className="mt-6 space-y-1.5 text-sm text-nyx-muted leading-snug">
+          {bullets.map((b) => (
+            <li key={b} className="flex gap-2">
+              <span className="text-nyx-soft">—</span>
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="h-px bg-nyx-line" />
 
-      <p className="text-nyx-muted leading-relaxed">{product.description}</p>
+      <p className="text-sm text-nyx-muted leading-relaxed">
+        {product.description}
+      </p>
 
       {drop && (
-        <div className="border-t border-nyx-line pt-6">
-          <p className="label-mono text-nyx-muted mb-2">Drop</p>
-          <Link
-            href={`/drops/${drop.slug}`}
-            className="font-serif text-xl text-nyx-ink link-underline"
-          >
-            {drop.name}
-          </Link>
-        </div>
+        <Link
+          href={`/drops/${drop.slug}`}
+          className="inline-flex items-center gap-1 text-xs text-nyx-muted hover:text-nyx-ink transition-colors"
+        >
+          Sobre o drop
+          <span aria-hidden>→</span>
+        </Link>
       )}
     </div>
   );
