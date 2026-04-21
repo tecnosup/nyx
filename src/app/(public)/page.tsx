@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Hero } from "@/components/landing/Hero";
 import { Manifesto } from "@/components/landing/Manifesto";
+import { FloatingMarquee } from "@/components/shared/FloatingMarquee";
 import { getActiveDrop, getUpcomingDrop } from "@/lib/drops";
+import { listProducts } from "@/lib/products";
 
 function formatReleaseDate(ts: number): string {
   return new Date(ts).toLocaleDateString("pt-BR", {
@@ -12,17 +14,33 @@ function formatReleaseDate(ts: number): string {
 }
 
 export default async function HomePage() {
-  const [active, upcoming] = await Promise.all([
+  const [active, upcoming, products] = await Promise.all([
     getActiveDrop(),
     getUpcomingDrop(),
+    listProducts(),
   ]);
 
   return (
     <>
       <Hero />
+
+      <FloatingMarquee
+        products={products}
+        label="No drop / passando agora"
+        speed={50}
+      />
+
       <Manifesto />
 
-      <section id="drops" className="py-32 border-t border-nyx-line">
+      {products.length > 3 && (
+        <FloatingMarquee
+          products={[...products].reverse()}
+          direction="right"
+          speed={55}
+        />
+      )}
+
+      <section id="drops" className="py-24 md:py-32 border-t border-nyx-line">
         <div className="container-nyx text-center">
           {active ? (
             <>
