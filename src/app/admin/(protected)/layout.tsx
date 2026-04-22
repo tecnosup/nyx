@@ -6,6 +6,7 @@ const NAV = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/produtos", label: "Produtos" },
   { href: "/admin/drops", label: "Drops" },
+  { href: "/admin/auditoria", label: "Auditoria" },
 ];
 
 export default function AdminProtectedLayout({

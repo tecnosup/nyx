@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { adminAuth, isAdminConfigured } from "@/lib/firebase-admin";
+import { checkRate, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +11,20 @@ function unauthorized(reason: string) {
 }
 
 export async function POST(req: Request) {
+  const ip = getClientIp(await headers());
+  const rate = checkRate(`admin-set-claim:${ip}`, 5, 60_000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Aguarde e tente novamente." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil(rate.retryAfterMs / 1000)),
+        },
+      }
+    );
+  }
+
   const secret = process.env.SEED_SECRET;
   if (!secret) return unauthorized("SEED_SECRET não configurado no servidor.");
 

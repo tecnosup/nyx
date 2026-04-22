@@ -1,15 +1,30 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { adminAuth, isAdminConfigured } from "@/lib/firebase-admin";
 import {
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
 } from "@/lib/admin-session";
+import { checkRate, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const ip = getClientIp(await headers());
+  const rate = checkRate(`admin-session:${ip}`, 10, 60_000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Aguarde e tente novamente." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil(rate.retryAfterMs / 1000)),
+        },
+      }
+    );
+  }
+
   if (!isAdminConfigured) {
     return NextResponse.json(
       { error: "Firebase Admin não configurado." },

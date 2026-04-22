@@ -1,10 +1,29 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/admin-session";
 import {
   deleteFromCloudinary,
   isCloudinaryConfigured,
   uploadToCloudinary,
 } from "@/lib/cloudinary";
+import { checkRate, getClientIp } from "@/lib/rate-limit";
+
+async function enforceUploadRate(action: "post" | "delete") {
+  const ip = getClientIp(await headers());
+  const rate = checkRate(`admin-upload-${action}:${ip}`, 30, 60_000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Muitas operações de upload. Aguarde." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil(rate.retryAfterMs / 1000)),
+        },
+      }
+    );
+  }
+  return null;
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +37,9 @@ const ALLOWED_MIME = new Set([
 const MAX_BYTES = 8 * 1024 * 1024;
 
 export async function POST(req: Request) {
+  const limited = await enforceUploadRate("post");
+  if (limited) return limited;
+
   if (!isCloudinaryConfigured) {
     return NextResponse.json(
       { error: "Cloudinary não configurado." },
@@ -84,6 +106,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const limited = await enforceUploadRate("delete");
+  if (limited) return limited;
+
   if (!isCloudinaryConfigured) {
     return NextResponse.json(
       { error: "Cloudinary não configurado." },
