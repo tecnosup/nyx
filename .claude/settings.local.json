@@ -15,7 +15,8 @@
       "Bash(grep -oE \"Camiseta Noir Oversized|Comprar pelo WhatsApp|Selecione um tamanho|Algodão japonês|R\\\\\\\\\\\\$ 289|Tamanho|Radar Tóquio|Você também pode gostar\")",
       "Bash(curl -s http://localhost:3000/produtos/categoria/moletons)",
       "Bash(curl -s http://localhost:3000/drops)",
-      "Bash(curl -s http://localhost:3000/drops/silencio-urbano)"
+      "Bash(curl -s http://localhost:3000/drops/silencio-urbano)",
+      "Bash(git -C /c/Users/cardo/nyx status --short)"
     ]
   }
 }

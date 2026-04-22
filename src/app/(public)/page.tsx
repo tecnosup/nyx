@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Hero } from "@/components/landing/Hero";
 import { Manifesto } from "@/components/landing/Manifesto";
 import { FloatingMarquee } from "@/components/shared/FloatingMarquee";
+import { ProductCard } from "@/components/catalog/ProductCard";
 import { getActiveDrop, getUpcomingDrop } from "@/lib/drops";
 import { listProducts } from "@/lib/products";
 
@@ -21,6 +22,7 @@ export default async function HomePage() {
   ]);
 
   const featured = products[0] ?? null;
+  const selecionados = products.slice(0, 4);
   const dropLabel = active
     ? `${active.name} — Disponível agora`
     : "Drop em preparo";
@@ -36,6 +38,42 @@ export default async function HomePage() {
       />
 
       <Manifesto />
+
+      {selecionados.length > 0 && (
+        <section
+          id="selecionados"
+          className="py-24 md:py-32 border-t border-nyx-line"
+        >
+          <div className="container-nyx">
+            <div className="flex items-end justify-between gap-6 mb-12 md:mb-16">
+              <div>
+                <p className="label-mono text-nyx-muted mb-3">Selecionados</p>
+                <h2 className="heading-display text-3xl md:text-5xl">
+                  Curadoria do drop.
+                </h2>
+              </div>
+              <Link
+                href="/produtos"
+                className="label-mono text-nyx-ink hover:text-nyx-muted transition-colors whitespace-nowrap hidden sm:block"
+              >
+                Ver tudo →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-12 md:gap-y-16">
+              {selecionados.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            <div className="mt-12 text-center sm:hidden">
+              <Link href="/produtos" className="btn-ghost">
+                Ver catálogo completo
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section id="drops" className="py-24 md:py-32 border-t border-nyx-line">
         <div className="container-nyx text-center">
