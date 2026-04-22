@@ -6,6 +6,8 @@ import { ChevronLeft } from "lucide-react";
 import { getDropBySlug, listDrops } from "@/lib/drops";
 import { listProductsByDrop } from "@/lib/products";
 import { ProductGrid } from "@/components/catalog/ProductGrid";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { dropJsonLd, siteUrl } from "@/lib/seo";
 import type { Drop } from "@/lib/types";
 
 interface PageProps {
@@ -37,13 +39,24 @@ export async function generateMetadata({
   const { slug } = await params;
   const drop = await getDropBySlug(slug);
   if (!drop) return { title: "Drop não encontrado" };
+  const description = drop.description.slice(0, 160);
+  const canonical = `/drops/${drop.slug}`;
   return {
     title: drop.name,
-    description: drop.description.slice(0, 160),
+    description,
+    alternates: { canonical },
     openGraph: {
+      type: "article",
       title: drop.name,
-      description: drop.description.slice(0, 160),
-      images: drop.heroImage ? [{ url: drop.heroImage }] : undefined,
+      description,
+      url: siteUrl(canonical),
+      images: drop.heroImage ? [{ url: drop.heroImage, alt: drop.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: drop.name,
+      description,
+      images: drop.heroImage ? [drop.heroImage] : undefined,
     },
   };
 }
@@ -57,6 +70,7 @@ export default async function DropDetailPage({ params }: PageProps) {
 
   return (
     <div className="pt-32 pb-24">
+      <JsonLd data={dropJsonLd(drop)} id="drop-jsonld" />
       {drop.heroImage && (
         <div className="relative h-[50vh] md:h-[70vh] w-full overflow-hidden bg-nyx-cream">
           <Image
