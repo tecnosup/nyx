@@ -118,7 +118,7 @@ export function Hero({ featured, dropLabel = "Drop 01 — Disponível agora" }: 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2, duration: 1 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-nyx-muted"
+        className="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-2 text-nyx-muted"
       >
         <span className="label-mono">Rolar</span>
         <motion.div
