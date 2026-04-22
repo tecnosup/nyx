@@ -11,7 +11,6 @@ export const SITE_CONFIG = {
 export const NAVIGATION = [
   { label: "Catálogo", href: "/produtos" },
   { label: "Drops", href: "/drops" },
-  { label: "Sobre", href: "/sobre" },
 ] as const;
 
 export const PRODUCT_CATEGORIES = [
