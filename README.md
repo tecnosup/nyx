@@ -1,5 +1,43 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment variables
+
+Copie `.env.local` e preencha:
+
+```bash
+# Firebase client (Auth + Firestore — não é mais usado Storage)
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+
+# Firebase Admin (server-side — Auth custom claims + Firestore admin)
+FIREBASE_ADMIN_PROJECT_ID=
+FIREBASE_ADMIN_CLIENT_EMAIL=
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Cloudinary (upload de imagens de produto — substitui o Firebase Storage)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Seed / grant admin claim (segredo único, server-only)
+SEED_SECRET=
+
+# Público
+NEXT_PUBLIC_WHATSAPP_NUMBER=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_NAME=NYX
+```
+
+### Cloudinary setup
+
+1. Criar conta grátis em https://cloudinary.com (sem cartão)
+2. Dashboard → copiar **Cloud Name**, **API Key** e **API Secret**
+3. Colar em `.env.local` como acima
+4. Upload do admin vai automaticamente pra pasta `nyx/products/*` no Cloudinary (free tier: 25 GB storage + 25 GB bandwidth/mês)
+
 ## Getting Started
 
 First, run the development server:
