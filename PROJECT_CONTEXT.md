@@ -71,11 +71,16 @@ NYX é uma landing page + e-commerce de streetwear da cliente **Giovana**, que t
 
 ## Plano de desenvolvimento em blocos
 
-- [x] **Bloco 1** — Fundação: landing base, Hero, Manifesto, Navbar, Footer, design tokens ← *atual*
-- [ ] **Bloco 2** — Catálogo público: schema de produtos no Firestore, grid responsivo (até 25 produtos), página de detalhe com galeria, sistema de drops e edição limitada, badges "últimas peças"/"esgotado", categorias (camisetas, moletons, calças, jaquetas, acessórios)
-- [ ] **Bloco 3** — Checkout via `wa.me`: formulário validado, geração de mensagem formatada com produto/tamanho/endereço/pagamento preferido
-- [ ] **Bloco 4** — Admin: Firebase Auth, dashboard, CRUD de produtos com upload pro Storage, gestão de drops, estoque, logs de auditoria
+- [x] **Bloco 1** — Fundação: landing base, Hero, Manifesto, Navbar, Footer, design tokens
+- [x] **Bloco 2** — Catálogo público: grid responsivo, PDP com galeria, drops, badges, categorias (mock em `src/lib/mock-products.ts`, Firestore ainda não plugado)
+- [x] **Bloco 3** — Checkout via `wa.me`: formulário validado (Zod), `buildWhatsAppMessage` em `src/lib/whatsapp.ts`, rate-limit em `src/lib/rate-limit.ts`
+- [x] **Bloco 3.5** — Rework visual FLOWBIT/REPRESENT: produto-herói em vinheta, grid ghost, PDP 3-col, size-pills, cta-pill (branch `bloco-3.5-visual`, commit `1e5f126`)
+- [ ] **Bloco 4** — Admin: Firebase Auth (Giovana + Tecnosup, custom claims), dashboard, CRUD de produtos com upload pro Storage, gestão de drops, estoque, logs de auditoria, Firestore Security Rules rigorosas, middleware em `/admin/*`
 - [ ] **Bloco 5** — Polish: SEO dinâmico, Open Graph por produto, contador regressivo do próximo drop, Google Analytics, deploy Firebase Hosting, Cloud API
+
+### Pendente opcional no Bloco 3.5 (antes de mergear)
+
+- Seção "Selecionados" na landing entre `<Manifesto />` e `<section id="drops">` — grid 4-col estilo REPRESENT mostrando 4 produtos curados (reusar `ProductCard` + `ProductGrid` ou inline). Fecha a identidade visual e dá preview do catálogo.
 
 ## Estrutura esperada
 
@@ -113,10 +118,35 @@ nyx/
 - Resumo curto ao terminar cada etapa
 - Manter estética: serifado elegante, streetwear minimalista, muito whitespace
 
-## Problema aberto (Bloco 1)
+## Estado atual (2026-04-21)
 
-Ao rodar `npm run dev`, `/` retorna **404 "This page could not be found"**.
+- Branch ativa: `bloco-3.5-visual` (ahead do `main`), commit mais recente `1e5f126`
+- Landing, catálogo, PDP e checkout funcionais com mock products
+- Firebase instalado em `src/lib/firebase.ts` mas **ainda não configurado** (sem `.env` com creds)
+- Sem pastas `src/app/admin/` nem `src/middleware.ts` ainda
 
-Hipóteses:
-1. `src/app/page.tsx` original (do `create-next-app`) não foi deletado — conflita com `src/app/(public)/page.tsx`
-2. Pasta `(public)` foi criada sem parênteses (como `public/`) — vira `/public` em vez de `/`
+## Kickoff do Bloco 4 — Admin
+
+Ordem sugerida para a próxima sessão:
+
+1. **Firebase setup real**: criar projeto Firebase, popular `.env.local` com creds (`NEXT_PUBLIC_FIREBASE_*` + `FIREBASE_ADMIN_*` server-side), testar conexão
+2. **Firestore schema**: migrar produtos mock (`src/lib/mock-products.ts`) pro Firestore, atualizar `src/lib/products.ts` e `src/lib/drops.ts` pra ler do Firestore em vez do mock
+3. **Auth**: Firebase Auth com email/senha, custom claim `admin: true` via Admin SDK em script one-off, criar contas pra Giovana + Tecnosup
+4. **Middleware**: `src/middleware.ts` protegendo `/admin/*` — verifica session cookie Firebase, redireciona pra `/admin/login` se não autenticado
+5. **Rotas admin**: `/admin/login`, `/admin/` (dashboard com stats), `/admin/produtos` (lista + CRUD), `/admin/produtos/novo`, `/admin/produtos/[id]/editar`, `/admin/drops` (CRUD de drops)
+6. **Storage upload**: componente `ImageUploader` usando Firebase Storage, preview, múltiplas imagens por produto, reorder
+7. **Security Rules**: `firestore.rules` + `storage.rules` — leitura pública de produtos/drops ativos, escrita só com `request.auth.token.admin == true`
+8. **Audit log**: coleção `audit_logs` gravando toda mutação de produto/drop (quem, quando, o quê)
+
+### Arquivos-chave pra consultar antes de começar
+
+- `src/lib/types.ts` — interface `Product`, `Drop` (schema que vai pro Firestore)
+- `src/lib/products.ts` / `src/lib/drops.ts` — trocar leitura de mock por Firestore
+- `src/lib/mock-products.ts` — seed pra popular o Firestore
+- `src/lib/firebase.ts` — client SDK já existe, falta Admin SDK (`firebase-admin`) pra server-side
+
+### Decisões já tomadas
+
+- Manter mock como fallback durante migração (feature flag `USE_FIRESTORE=true`)
+- Admin não precisa de 2FA (decidido no kickoff)
+- Logs de auditoria em coleção separada, não em subcoleção do produto

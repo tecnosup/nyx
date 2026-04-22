@@ -55,4 +55,35 @@
   .input-nyx {
     @apply w-full border border-nyx-line bg-transparent px-3 py-2.5 text-sm text-nyx-ink placeholder:text-nyx-soft focus:border-nyx-ink focus:outline-none transition-colors;
   }
+
+  .product-stage {
+    background:
+      radial-gradient(ellipse at center, #ffffff 0%, #f4f0e3 55%, #e4ded0 100%);
+  }
+
+  .product-stage-dim {
+    background:
+      radial-gradient(ellipse at 50% 40%, #fefbef 0%, #eee7d4 60%, #c9c3b3 100%);
+  }
+
+  .size-pill {
+    @apply label-mono inline-flex items-center justify-center min-w-[52px] px-4 py-3 border border-nyx-line text-nyx-ink transition-colors;
+  }
+
+  .size-pill-active {
+    @apply border-nyx-ink bg-nyx-ink text-nyx-bg;
+  }
+
+  .size-pill-disabled {
+    @apply border-nyx-line text-nyx-soft line-through cursor-not-allowed;
+  }
+
+  .cta-pill {
+    @apply inline-flex items-center justify-center gap-2 bg-nyx-ink text-nyx-bg rounded-full px-6 py-3 text-xs uppercase tracking-widest transition-all duration-300 hover:bg-nyx-muted active:scale-[0.98];
+  }
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
 }

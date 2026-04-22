@@ -1,71 +1,132 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useEffect } from "react";
+import type { Product } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
 
-export function Hero() {
+interface Props {
+  featured?: Product | null;
+  dropLabel?: string;
+}
+
+export function Hero({ featured, dropLabel = "Drop 01 — Disponível agora" }: Props) {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 30, damping: 15 });
+  const springY = useSpring(mouseY, { stiffness: 30, damping: 15 });
+
+  const imgX = useTransform(springX, [-0.5, 0.5], [-18, 18]);
+  const imgY = useTransform(springY, [-0.5, 0.5], [-12, 12]);
+
+  useEffect(() => {
+    function handleMove(e: MouseEvent) {
+      mouseX.set(e.clientX / window.innerWidth - 0.5);
+      mouseY.set(e.clientY / window.innerHeight - 0.5);
+    }
+    window.addEventListener("mousemove", handleMove);
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, [mouseX, mouseY]);
+
+  if (!featured) {
+    return (
+      <section className="relative min-h-[88vh] flex items-center pt-28 pb-16 product-stage-dim">
+        <div className="container-nyx text-center">
+          <p className="label-mono text-nyx-muted mb-8">{dropLabel}</p>
+          <h1 className="heading-display text-[13vw] md:text-[8rem] text-nyx-ink">
+            Próximo drop <em className="italic">em preparo</em>.
+          </h1>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="relative min-h-screen flex items-end pb-20 md:pb-32 pt-32 overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <div
-          className="w-full h-full"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, #545454 1px, transparent 0)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-      </div>
+    <section className="relative min-h-[92vh] flex items-center pt-24 pb-16 product-stage-dim overflow-hidden">
+      <div className="container-nyx relative w-full">
+        <div className="relative flex flex-col items-center text-center">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="label-mono text-nyx-muted mb-8"
+          >
+            {dropLabel}
+          </motion.p>
 
-      <div className="container-nyx relative">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-          className="label-mono text-nyx-muted mb-8"
-        >
-          Drop 01 — Disponível agora
-        </motion.p>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.1, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            style={{ x: imgX, y: imgY }}
+            className="relative w-full max-w-[640px] aspect-[4/5]"
+          >
+            <div
+              aria-hidden
+              className="absolute inset-x-[8%] bottom-[-20px] h-10 rounded-[50%] bg-nyx-ink/25 blur-2xl"
+            />
+            <div
+              className="relative w-full h-full"
+              style={{ animation: "floaty 6s ease-in-out infinite" }}
+            >
+              <Image
+                src={featured.images[0]}
+                alt={featured.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 640px"
+                priority
+                className="object-contain"
+              />
+            </div>
+          </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="heading-display text-[15vw] md:text-[11vw] lg:text-[9rem] text-nyx-ink"
-        >
-          Peças <em className="italic font-normal">raras</em>
-          <br />
-          para quem <em className="italic font-normal">vê</em>
-          <br />
-          antes.
-        </motion.h1>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-12 md:mt-16 flex flex-col md:flex-row items-start md:items-end justify-between gap-8"
-        >
-          <p className="max-w-md text-nyx-muted leading-relaxed">
-            Curadoria de drops selecionados. Quantidades limitadas. Quando
-            acaba, acaba. Sem reposição, sem temporada, sem concessão.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/produtos" className="btn-primary group">
-              Ver catálogo
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mt-10 flex flex-col items-center gap-5"
+          >
+            <Link
+              href={`/produtos/${featured.slug}`}
+              className="cta-pill group"
+            >
+              <span>Ver peça</span>
               <ArrowRight
-                size={16}
+                size={14}
                 className="transition-transform group-hover:translate-x-1"
               />
             </Link>
-            <Link href="#drops" className="btn-ghost">
-              Próximo drop
-            </Link>
-          </div>
-        </motion.div>
+
+            <div className="flex items-baseline gap-3 text-nyx-ink">
+              <span className="font-serif italic text-lg md:text-xl">
+                {featured.name}
+              </span>
+              <span className="text-nyx-muted">·</span>
+              <span className="text-sm text-nyx-muted">
+                {formatPrice(featured.price)}
+              </span>
+            </div>
+          </motion.div>
+        </div>
       </div>
+
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2, duration: 1 }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-nyx-muted"
+      >
+        <span className="label-mono">Rolar</span>
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          className="w-px h-10 bg-nyx-ink/40"
+        />
+      </motion.div>
     </section>
   );
 }
