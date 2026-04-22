@@ -12,7 +12,9 @@ import { listDrops } from "@/lib/drops";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { WhatsAppCta } from "@/components/product/WhatsAppCta";
+import { JsonLd } from "@/components/shared/JsonLd";
 import { formatPrice } from "@/lib/utils";
+import { productJsonLd, siteUrl } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -29,13 +31,25 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return { title: "Produto não encontrado" };
+  const description = product.description.slice(0, 160);
+  const canonical = `/produtos/${product.slug}`;
+  const image = product.images[0];
   return {
     title: product.name,
-    description: product.description.slice(0, 160),
+    description,
+    alternates: { canonical },
     openGraph: {
+      type: "website",
       title: product.name,
-      description: product.description.slice(0, 160),
-      images: product.images[0] ? [{ url: product.images[0] }] : undefined,
+      description,
+      url: siteUrl(canonical),
+      images: image ? [{ url: image, alt: product.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description,
+      images: image ? [image] : undefined,
     },
   };
 }
@@ -55,6 +69,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <div className="pt-28 pb-20">
+      <JsonLd data={productJsonLd(product)} id="product-jsonld" />
       <div className="container-nyx">
         <Link
           href="/produtos"

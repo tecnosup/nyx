@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { Hero } from "@/components/landing/Hero";
 import { Manifesto } from "@/components/landing/Manifesto";
+import { DropCountdown } from "@/components/landing/DropCountdown";
 import { FloatingMarquee } from "@/components/shared/FloatingMarquee";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { JsonLd } from "@/components/shared/JsonLd";
 import { getActiveDrop, getUpcomingDrop } from "@/lib/drops";
 import { listProducts } from "@/lib/products";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
 function formatReleaseDate(ts: number): string {
   return new Date(ts).toLocaleDateString("pt-BR", {
@@ -29,6 +32,10 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd
+        data={[organizationJsonLd(), websiteJsonLd()]}
+        id="site-jsonld"
+      />
       <Hero featured={featured} dropLabel={dropLabel} />
 
       <FloatingMarquee
@@ -36,6 +43,13 @@ export default async function HomePage() {
         label="@nyx.store — No drop agora"
         speed={55}
       />
+
+      {upcoming && !active && (
+        <DropCountdown
+          releaseDate={upcoming.releaseDate}
+          dropName={upcoming.name}
+        />
+      )}
 
       <Manifesto />
 
