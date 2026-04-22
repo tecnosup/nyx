@@ -41,7 +41,7 @@ service cloud.firestore {
     }
 
     match /drops/{dropId} {
-      allow read: if resource.data.status in ['active', 'archived'] || isAdmin();
+      allow read: if true;
       allow create: if isAdmin() && isValidDrop(request.resource.data);
       allow update: if isAdmin() && isValidDrop(request.resource.data);
       allow delete: if isAdmin();
