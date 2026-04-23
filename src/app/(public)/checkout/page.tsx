@@ -54,7 +54,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
             </h1>
             <p className="text-nyx-muted mb-10 max-w-lg">
               Preencha seus dados. Ao confirmar, você será direcionado ao
-              WhatsApp com o pedido já formatado para a Giovana.
+              WhatsApp com o pedido já formatado para a Giovanna.
             </p>
 
             <CheckoutForm
@@ -107,7 +107,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
               </div>
 
               <p className="text-xs text-nyx-muted leading-relaxed">
-                Pagamento e frete confirmados na conversa com a Giovana.
+                Pagamento e frete confirmados na conversa com a Giovanna.
               </p>
             </div>
           </aside>

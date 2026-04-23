@@ -309,7 +309,7 @@ export function CheckoutForm({ product, size }: Props) {
 
       <p className="text-xs text-nyx-muted leading-relaxed">
         Ao confirmar, abrimos uma conversa no WhatsApp com o pedido já formatado.
-        A Giovana confirma frete, prazo e forma de pagamento antes da cobrança.
+        A Giovanna confirma frete, prazo e forma de pagamento antes da cobrança.
       </p>
     </form>
   );

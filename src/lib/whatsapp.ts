@@ -42,7 +42,7 @@ export function buildOrderMessage(payload: OrderMessagePayload): string {
   const price = effectivePrice(product.pricePix, product.priceCard, paymentMethod);
   const complement = shipping.complement?.trim();
   const lines: string[] = [
-    "Olá, Giovana! Fiz meu pedido na NYX.",
+    "Olá, Giovanna! Fiz meu pedido na NYX.",
     "",
     "*Peça*",
     product.name,
@@ -88,7 +88,7 @@ export function buildCartOrderMessage(payload: CartOrderMessagePayload): string 
   const complement = shipping.complement?.trim();
 
   const lines: string[] = [
-    "Olá, Giovana! Fiz meu pedido na NYX.",
+    "Olá, Giovanna! Fiz meu pedido na NYX.",
     "",
     `*Peças (${items.length} ${items.length === 1 ? "item" : "itens"})*`,
   ];

@@ -41,7 +41,7 @@ export default function CarrinhoPage() {
           <div>
             <h1 className="heading-display text-4xl md:text-5xl mb-2">Finalizar pedido</h1>
             <p className="text-nyx-muted mb-10 max-w-lg">
-              Preencha seus dados. Ao confirmar, abrimos o WhatsApp com o pedido completo para a Giovana.
+              Preencha seus dados. Ao confirmar, abrimos o WhatsApp com o pedido completo para a Giovanna.
             </p>
             <CartCheckoutForm items={items} onSuccess={clearCart} />
           </div>
@@ -114,7 +114,7 @@ export default function CarrinhoPage() {
               </div>
 
               <p className="text-xs text-nyx-muted leading-relaxed">
-                Pagamento e frete confirmados na conversa com a Giovana.
+                Pagamento e frete confirmados na conversa com a Giovanna.
               </p>
             </div>
           </aside>

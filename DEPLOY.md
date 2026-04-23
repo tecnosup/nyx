@@ -22,7 +22,7 @@ Resumo:
 | Var | Fonte | Segredo? |
 |-----|-------|----------|
 | `NEXT_PUBLIC_SITE_URL` | URL que a Vercel gerar, depois o domínio final | Não |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Número da Giovana | Não |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Número da Giovanna | Não |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics 4 (opcional) | Não |
 | `NEXT_PUBLIC_FIREBASE_*` (5 vars) | Firebase Console → Project Settings → Web app | Não (public) |
 | `FIREBASE_ADMIN_PROJECT_ID` | Service account JSON → `project_id` | Sim |
@@ -53,7 +53,7 @@ Resumo:
 - [ ] `/produtos/[slug]` gera OG com imagem Cloudinary (testar em [opengraph.xyz](https://www.opengraph.xyz))
 - [ ] `/sitemap.xml` e `/robots.txt` respondem
 - [ ] `/admin/login` redireciona pra lá sem cookie (middleware funcionando)
-- [ ] Login admin com a conta da Giovana funciona
+- [ ] Login admin com a conta da Giovanna funciona
 - [ ] Upload de imagem via admin grava no Cloudinary
 - [ ] Audit log recebe entrada ao criar produto de teste
 
