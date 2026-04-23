@@ -12,6 +12,7 @@ const NAV = [
   { href: "/admin/drops", label: "Drops" },
   { href: "/admin/categorias", label: "Categorias" },
   { href: "/admin/auditoria", label: "Auditoria" },
+  { href: "/admin/configuracoes", label: "Configurações" },
 ];
 
 export function AdminNav() {

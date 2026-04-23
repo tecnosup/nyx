@@ -1,5 +1,7 @@
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -65,4 +67,28 @@ export async function listRelatedProducts(
   return all
     .filter((p) => p.id !== product.id && p.category === product.category)
     .slice(0, max);
+}
+
+export async function getFeaturedProduct(): Promise<Product | null> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const settingsDoc = await getDoc(doc(db, "settings", "home"));
+      const featuredId = settingsDoc.exists()
+        ? (settingsDoc.data().featuredProductId as string | null)
+        : null;
+
+      if (featuredId) {
+        const productDoc = await getDoc(doc(db, "products", featuredId));
+        if (productDoc.exists()) {
+          const p = { id: productDoc.id, ...productDoc.data() } as Product;
+          if (p.status === "published") return p;
+        }
+      }
+    } catch {
+      // fallback below
+    }
+  }
+
+  const all = await listProducts();
+  return all[0] ?? null;
 }

@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/catalog/ProductCard";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { getActiveDrop, getUpcomingDrop } from "@/lib/drops";
-import { listProducts } from "@/lib/products";
+import { listProducts, getFeaturedProduct } from "@/lib/products";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
 function formatReleaseDate(ts: number): string {
@@ -19,13 +19,12 @@ function formatReleaseDate(ts: number): string {
 }
 
 export default async function HomePage() {
-  const [active, upcoming, products] = await Promise.all([
+  const [active, upcoming, products, featured] = await Promise.all([
     getActiveDrop(),
     getUpcomingDrop(),
     listProducts(),
+    getFeaturedProduct(),
   ]);
-
-  const featured = products[0] ?? null;
   const selecionados = products.slice(0, 4);
   const dropLabel = active
     ? `${active.name} — Disponível agora`
