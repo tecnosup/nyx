@@ -15,15 +15,15 @@
   }
 
   body {
-    background-color: #fefbef;
-    color: #545454;
+    background-color: #100f0a;
+    color: #ede8d8;
     font-family: var(--font-inter);
     font-feature-settings: "ss01", "cv11";
   }
 
   ::selection {
-    background-color: #545454;
-    color: #fefbef;
+    background-color: #ede8d8;
+    color: #100f0a;
   }
 }
 
@@ -58,12 +58,12 @@
 
   .product-stage {
     background:
-      radial-gradient(ellipse at center, #ffffff 0%, #f4f0e3 55%, #e4ded0 100%);
+      radial-gradient(ellipse at center, #1e1c14 0%, #161410 55%, #0f0e0a 100%);
   }
 
   .product-stage-dim {
     background:
-      radial-gradient(ellipse at 50% 40%, #fefbef 0%, #eee7d4 60%, #c9c3b3 100%);
+      radial-gradient(ellipse at 50% 40%, #1a1814 0%, #131210 60%, #0a0908 100%);
   }
 
   .size-pill {

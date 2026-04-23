@@ -10,13 +10,13 @@ const config: Config = {
     extend: {
       colors: {
         nyx: {
-          bg: "#fefbef",
-          ink: "#545454",
-          muted: "#737373",
-          soft: "#a6a6a6",
-          line: "#d9d9d9",
-          stone: "#b4b4b4",
-          cream: "#eaeae4",
+          bg: "#100f0a",
+          ink: "#ede8d8",
+          muted: "#8c8578",
+          soft: "#5c5a4f",
+          line: "#2a2820",
+          stone: "#6e6a5e",
+          cream: "#1b1a13",
         },
       },
       fontFamily: {
