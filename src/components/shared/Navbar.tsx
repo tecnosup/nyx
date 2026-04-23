@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShoppingBag } from "lucide-react";
 import { NAVIGATION, SITE_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/contexts/CartContext";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { count, openCart } = useCart();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -48,16 +51,32 @@ export function Navbar() {
             ))}
           </ul>
 
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="md:hidden text-nyx-ink"
-            aria-label="Abrir menu"
-          >
-            <Menu size={24} />
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={openCart}
+              className="relative text-nyx-ink hover:text-nyx-muted transition-colors"
+              aria-label="Abrir carrinho"
+            >
+              <ShoppingBag size={20} />
+              {count > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-nyx-ink text-nyx-bg text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {count > 9 ? "9+" : count}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="md:hidden text-nyx-ink"
+              aria-label="Abrir menu"
+            >
+              <Menu size={24} />
+            </button>
+          </div>
         </nav>
       </header>
 
+      {/* Mobile menu */}
       <div
         className={cn(
           "fixed inset-0 z-[60] bg-nyx-bg transition-transform duration-500 md:hidden",
@@ -93,8 +112,21 @@ export function Navbar() {
               </Link>
             </li>
           ))}
+          <li>
+            <button
+              onClick={() => { setMobileOpen(false); openCart(); }}
+              className="font-serif text-4xl text-nyx-ink flex items-center gap-3"
+            >
+              Carrinho
+              {count > 0 && (
+                <span className="label-mono text-base text-nyx-muted">({count})</span>
+              )}
+            </button>
+          </li>
         </ul>
       </div>
+
+      <CartDrawer />
     </>
   );
 }

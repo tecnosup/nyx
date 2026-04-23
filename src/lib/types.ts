@@ -1,9 +1,4 @@
-export type ProductCategory =
-  | "camisetas"
-  | "moletons"
-  | "calcas"
-  | "jaquetas"
-  | "acessorios";
+export type ProductCategory = string;
 
 export type ProductSize = "PP" | "P" | "M" | "G" | "GG" | "UNICO";
 
@@ -26,6 +21,7 @@ export interface Product {
   images: string[];
   sizes: SizeStock[];
   dropId: string | null;
+  colors: string[];
   isLimited: boolean;
   status: ProductStatus;
   createdAt: number;
@@ -61,7 +57,7 @@ export function availableSizes(product: Pick<Product, "sizes">): SizeStock[] {
   return product.sizes.filter((s) => s.quantity > 0);
 }
 
-export const CATEGORY_LABELS: Record<ProductCategory, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
   camisetas: "Camisetas",
   moletons: "Moletons",
   calcas: "Calças",

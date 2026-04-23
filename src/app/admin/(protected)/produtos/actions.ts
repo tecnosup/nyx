@@ -14,7 +14,6 @@ import {
 } from "@/lib/admin-products";
 import { slugify } from "@/lib/slug";
 import type {
-  ProductCategory,
   ProductSize,
   ProductStatus,
   SizeStock,
@@ -24,20 +23,13 @@ export type ActionResult =
   | { ok: true }
   | { ok: false; error: string };
 
-const CATEGORIES: ProductCategory[] = [
-  "camisetas",
-  "moletons",
-  "calcas",
-  "jaquetas",
-  "acessorios",
-];
 const SIZES: ProductSize[] = ["PP", "P", "M", "G", "GG", "UNICO"];
 const STATUSES: ProductStatus[] = ["draft", "published"];
 
 function parseForm(formData: FormData): ProductInput | { error: string } {
   const name = (formData.get("name") as string | null)?.trim() ?? "";
   const description = (formData.get("description") as string | null)?.trim() ?? "";
-  const category = formData.get("category") as ProductCategory | null;
+  const category = (formData.get("category") as string | null)?.trim() ?? "";
   const priceRaw = formData.get("price") as string | null;
   const dropIdRaw = formData.get("dropId") as string | null;
   const status = formData.get("status") as ProductStatus | null;
@@ -45,14 +37,15 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   const isLimited = formData.get("isLimited") === "on";
   const imagesJson = (formData.get("images") as string | null) ?? "[]";
   const sizesJson = (formData.get("sizes") as string | null) ?? "[]";
+  const colorsJson = (formData.get("colors") as string | null) ?? "[]";
 
   if (name.length < 2) return { error: "Nome muito curto." };
   if (description.length < 10) return { error: "Descrição muito curta." };
-  if (!category || !CATEGORIES.includes(category))
-    return { error: "Categoria inválida." };
+  if (!category) return { error: "Categoria obrigatória." };
   if (!status || !STATUSES.includes(status))
     return { error: "Status inválido." };
-  const price = Number(priceRaw);
+
+  const price = parseFloat(priceRaw ?? "");
   if (!Number.isFinite(price) || price < 0)
     return { error: "Preço inválido." };
 
@@ -78,6 +71,14 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   }
   if (sizes.length === 0) return { error: "Informe pelo menos um tamanho." };
 
+  let colors: string[];
+  try {
+    const raw = JSON.parse(colorsJson);
+    colors = Array.isArray(raw) ? raw.filter((c) => typeof c === "string") : [];
+  } catch {
+    colors = [];
+  }
+
   const dropId = dropIdRaw && dropIdRaw !== "" ? dropIdRaw : null;
 
   return {
@@ -86,6 +87,7 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
     description,
     category,
     price,
+    colors,
     images,
     sizes,
     dropId,

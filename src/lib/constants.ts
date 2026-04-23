@@ -5,7 +5,7 @@ export const SITE_CONFIG = {
     "NYX é uma curadoria de peças raras, edições limitadas e drops selecionados. Cada peça é única, numerada e chega até você direto do nosso radar.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5512981646555",
-  instagram: "https://instagram.com/nyx",
+  instagram: "https://www.instagram.com/nyxxwear_/",
 } as const;
 
 export const NAVIGATION = [

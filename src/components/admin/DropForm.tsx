@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import type { Drop, DropStatus } from "@/lib/types";
+import { ImageUploader } from "./ImageUploader";
 
 interface Props {
   mode: "create" | "edit";
@@ -121,16 +122,15 @@ export function DropForm({ mode, drop, action }: Props) {
         </div>
       )}
 
-      <label className="block">
-        <span className="label-mono text-nyx-muted mb-2 block">URL da hero image</span>
-        <input
-          type="url"
-          value={heroImage}
-          onChange={(e) => setHeroImage(e.target.value)}
-          className="input-nyx font-mono text-sm"
-          placeholder="https://…"
+      <div>
+        <p className="label-mono text-nyx-muted mb-3">Hero image do drop</p>
+        <ImageUploader
+          value={heroImage ? [heroImage] : []}
+          onChange={(imgs) => setHeroImage(imgs[0] ?? "")}
+          folder="drops"
+          max={1}
         />
-      </label>
+      </div>
 
       {error && (
         <div className="border border-red-300 bg-red-50 p-4 text-sm text-red-800">

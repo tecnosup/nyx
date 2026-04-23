@@ -4,6 +4,7 @@ import { Manifesto } from "@/components/landing/Manifesto";
 import { DropCountdown } from "@/components/landing/DropCountdown";
 import { FloatingMarquee } from "@/components/shared/FloatingMarquee";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { getActiveDrop, getUpcomingDrop } from "@/lib/drops";
 import { listProducts } from "@/lib/products";
@@ -40,7 +41,7 @@ export default async function HomePage() {
 
       <FloatingMarquee
         products={products}
-        label="@nyx.store — No drop agora"
+        label="@nyxxwear_ — No drop agora"
         speed={55}
       />
 
@@ -59,7 +60,7 @@ export default async function HomePage() {
           className="py-24 md:py-32 border-t border-nyx-line"
         >
           <div className="container-nyx">
-            <div className="flex items-end justify-between gap-6 mb-12 md:mb-16">
+            <ScrollReveal className="flex items-end justify-between gap-6 mb-12 md:mb-16">
               <div>
                 <p className="label-mono text-nyx-muted mb-3">Selecionados</p>
                 <h2 className="heading-display text-3xl md:text-5xl">
@@ -72,11 +73,13 @@ export default async function HomePage() {
               >
                 Ver tudo →
               </Link>
-            </div>
+            </ScrollReveal>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-12 md:gap-y-16">
-              {selecionados.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {selecionados.map((product, i) => (
+                <ScrollReveal key={product.id} delay={i * 0.08}>
+                  <ProductCard product={product} />
+                </ScrollReveal>
               ))}
             </div>
 
@@ -89,57 +92,75 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section id="drops" className="py-24 md:py-32 border-t border-nyx-line">
-        <div className="container-nyx text-center">
+      {/* Seção de drops — editorial dark */}
+      <section id="drops" className="relative overflow-hidden bg-nyx-ink py-32 md:py-44">
+        {/* Ghost typography */}
+        <span
+          aria-hidden
+          className="pointer-events-none select-none absolute inset-0 flex items-center justify-center font-serif italic text-[28vw] leading-none text-white/[0.04] whitespace-nowrap"
+        >
+          DROP
+        </span>
+
+        <div className="container-nyx relative text-center">
           {active ? (
-            <>
-              <p className="label-mono text-nyx-muted mb-4">No ar agora</p>
-              <h2 className="heading-display text-4xl md:text-6xl">
+            <ScrollReveal>
+              <p className="label-mono text-nyx-bg/50 mb-6 tracking-widest">No ar agora</p>
+              <h2 className="heading-display text-5xl md:text-7xl lg:text-8xl text-nyx-bg leading-none mb-8">
                 {active.name}
               </h2>
-              <p className="mt-6 text-nyx-muted max-w-xl mx-auto leading-relaxed">
+              <p className="text-nyx-bg/60 max-w-xl mx-auto leading-relaxed mb-12 text-lg">
                 {active.description}
               </p>
-              <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href={`/drops/${active.slug}`}
-                  className="btn-primary"
+                  className="inline-flex items-center justify-center gap-2 bg-nyx-bg text-nyx-ink px-8 py-4 text-sm uppercase tracking-widest transition-all duration-300 hover:bg-nyx-cream"
                 >
                   Ver o drop
                 </Link>
-                <Link href="/produtos" className="btn-ghost">
+                <Link
+                  href="/produtos"
+                  className="inline-flex items-center justify-center gap-2 border border-nyx-bg/40 text-nyx-bg px-8 py-4 text-sm uppercase tracking-widest transition-all duration-300 hover:border-nyx-bg"
+                >
                   Catálogo completo
                 </Link>
               </div>
-            </>
+            </ScrollReveal>
           ) : upcoming ? (
-            <>
-              <p className="label-mono text-nyx-muted mb-4">Próximo drop</p>
-              <h2 className="heading-display text-4xl md:text-6xl">
+            <ScrollReveal>
+              <p className="label-mono text-nyx-bg/50 mb-6 tracking-widest">Próximo drop</p>
+              <h2 className="heading-display text-5xl md:text-7xl lg:text-8xl text-nyx-bg leading-none mb-8">
                 {upcoming.name}
               </h2>
-              <p className="mt-6 text-nyx-muted max-w-xl mx-auto leading-relaxed">
+              <p className="text-nyx-bg/60 max-w-xl mx-auto leading-relaxed mb-12 text-lg">
                 Entra no ar em {formatReleaseDate(upcoming.releaseDate)}.
               </p>
-              <div className="mt-10">
-                <Link
-                  href={`/drops/${upcoming.slug}`}
-                  className="btn-ghost"
-                >
-                  Saber mais
-                </Link>
-              </div>
-            </>
+              <Link
+                href={`/drops/${upcoming.slug}`}
+                className="inline-flex items-center justify-center gap-2 border border-nyx-bg/40 text-nyx-bg px-8 py-4 text-sm uppercase tracking-widest transition-all duration-300 hover:border-nyx-bg"
+              >
+                Saber mais
+              </Link>
+            </ScrollReveal>
           ) : (
-            <>
-              <p className="label-mono text-nyx-muted mb-4">Em breve</p>
-              <h2 className="heading-display text-4xl md:text-6xl">
-                Próximo drop sendo preparado.
+            <ScrollReveal>
+              <p className="label-mono text-nyx-bg/50 mb-6 tracking-widest">Em breve</p>
+              <h2 className="heading-display text-5xl md:text-7xl lg:text-8xl text-nyx-bg leading-none mb-8">
+                Próximo drop <em className="italic">sendo preparado.</em>
               </h2>
-              <p className="mt-6 text-nyx-muted max-w-xl mx-auto">
+              <p className="text-nyx-bg/60 max-w-xl mx-auto text-lg">
                 Siga o Instagram para saber em primeira mão.
               </p>
-            </>
+              <a
+                href="https://www.instagram.com/nyxxwear_/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-10 inline-flex items-center justify-center gap-2 border border-nyx-bg/40 text-nyx-bg px-8 py-4 text-sm uppercase tracking-widest transition-all duration-300 hover:border-nyx-bg"
+              >
+                @nyxxwear_
+              </a>
+            </ScrollReveal>
           )}
         </div>
       </section>

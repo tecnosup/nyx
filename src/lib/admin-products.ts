@@ -17,6 +17,7 @@ export interface ProductInput {
   description: string;
   category: ProductCategory;
   price: number;
+  colors: string[];
   images: string[];
   sizes: SizeStock[];
   dropId: string | null;
@@ -30,7 +31,8 @@ function sanitize(input: ProductInput): Omit<Product, "id" | "createdAt" | "upda
     name: input.name.trim(),
     description: input.description.trim(),
     category: input.category,
-    price: Math.round(input.price),
+    price: Math.round(input.price * 100) / 100,
+    colors: (input.colors ?? []).filter((c) => c.trim().length > 0),
     images: input.images.filter((url) => url.trim().length > 0),
     sizes: input.sizes
       .map((s) => ({ size: s.size, quantity: Math.max(0, Math.round(s.quantity)) }))

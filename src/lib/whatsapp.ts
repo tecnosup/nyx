@@ -7,6 +7,7 @@ import {
   type ProductSize,
   type ShippingAddress,
 } from "./types";
+import type { CartItem } from "./cart";
 
 function digits(value: string): string {
   return value.replace(/\D/g, "");
@@ -63,6 +64,53 @@ export function buildOrderMessage(payload: OrderMessagePayload): string {
     "",
     "Pode confirmar frete e prazo?"
   );
+
+  return lines.join("\n");
+}
+
+export interface CartOrderMessagePayload {
+  items: CartItem[];
+  shipping: ShippingAddress;
+  paymentMethod: PaymentMethod;
+  notes?: string;
+}
+
+export function buildCartOrderMessage(payload: CartOrderMessagePayload): string {
+  const { items, shipping, paymentMethod, notes } = payload;
+  const subtotal = items.reduce((sum, i) => sum + i.price, 0);
+  const complement = shipping.complement?.trim();
+
+  const lines: string[] = [
+    "Olá, Giovana! Fiz meu pedido na NYX.",
+    "",
+    `*Peças (${items.length} ${items.length === 1 ? "item" : "itens"})*`,
+  ];
+
+  items.forEach((item) => {
+    const colorPart = item.color ? ` · ${item.color}` : "";
+    lines.push(`• ${item.productName} — Tam. ${item.size}${colorPart} — ${formatPrice(item.price)}`);
+  });
+
+  lines.push(
+    "",
+    `*Total: ${formatPrice(subtotal)}*`,
+    "(frete a combinar)",
+    "",
+    "*Entrega*",
+    shipping.name,
+    `${shipping.street}, ${shipping.number}${complement ? ` — ${complement}` : ""}`,
+    `${shipping.neighborhood}, ${shipping.city} — ${shipping.state}`,
+    `CEP: ${formatCep(shipping.cep)}`,
+    `Tel: ${formatPhone(shipping.phone)}`,
+    "",
+    `*Pagamento preferido:* ${PAYMENT_LABELS[paymentMethod]}`
+  );
+
+  if (notes && notes.trim()) {
+    lines.push("", `*Observações:* ${notes.trim()}`);
+  }
+
+  lines.push("", "Pode confirmar frete e prazo?");
 
   return lines.join("\n");
 }
