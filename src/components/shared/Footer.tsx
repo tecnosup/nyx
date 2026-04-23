@@ -54,9 +54,18 @@ export function Footer() {
             © {new Date().getFullYear()} {SITE_CONFIG.name} Todos os direitos
             reservados.
           </p>
-          <p className="text-xs text-nyx-soft label-mono">
-            Desenvolvido por Tecnosup
-          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/privacidade" className="text-xs text-nyx-soft hover:text-nyx-muted transition-colors">
+              Privacidade
+            </Link>
+            <Link href="/termos" className="text-xs text-nyx-soft hover:text-nyx-muted transition-colors">
+              Termos de uso
+            </Link>
+            <Link href="/trocas" className="text-xs text-nyx-soft hover:text-nyx-muted transition-colors">
+              Trocas e devoluções
+            </Link>
+            <span className="text-xs text-nyx-soft label-mono">Desenvolvido por Tecnosup</span>
+          </div>
         </div>
       </div>
     </footer>

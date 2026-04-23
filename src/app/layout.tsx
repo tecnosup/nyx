@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Cormorant_Garamond } from "next/font/google";
 import { SITE_CONFIG } from "@/lib/constants";
 import { Analytics } from "@/components/shared/Analytics";
+import { CookieBanner } from "@/components/shared/CookieBanner";
 import "./globals.css";
 
 const inter = Inter({
@@ -74,6 +75,7 @@ export default function RootLayout({
       <body className="min-h-screen antialiased">
         {children}
         <Analytics />
+        <CookieBanner />
       </body>
     </html>
   );
