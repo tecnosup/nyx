@@ -41,7 +41,7 @@ export default async function AdminProductsPage() {
           </Link>
         </div>
       ) : (
-        <div className="border border-nyx-line overflow-hidden">
+        <div className="border border-nyx-line overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-nyx-cream/60 label-mono text-xs text-nyx-muted">
               <tr>

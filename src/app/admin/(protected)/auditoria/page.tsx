@@ -17,6 +17,7 @@ function actionLabel(action: string): string {
 function formatTs(ms: number | null): string {
   if (!ms) return "—";
   return new Date(ms).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -43,7 +44,7 @@ export default async function AdminAuditPage() {
           <p className="text-nyx-muted">Nenhum registro ainda.</p>
         </div>
       ) : (
-        <div className="border border-nyx-line overflow-hidden">
+        <div className="border border-nyx-line overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-nyx-cream/60 label-mono text-xs text-nyx-muted">
               <tr>
