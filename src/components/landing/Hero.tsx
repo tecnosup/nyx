@@ -45,7 +45,7 @@ export function Hero({ featured, dropLabel = "Drop 01 — Disponível agora" }: 
   }
 
   return (
-    <section className="relative min-h-[92vh] flex items-center pt-24 pb-16 product-stage-dim overflow-hidden">
+    <section className="relative min-h-[92vh] flex items-center pt-24 pb-16 md:pb-28 product-stage-dim overflow-hidden">
       <div className="container-nyx relative w-full">
         <div className="relative flex flex-col items-center text-center">
           <motion.p
@@ -62,7 +62,7 @@ export function Hero({ featured, dropLabel = "Drop 01 — Disponível agora" }: 
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.1, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             style={{ x: imgX, y: imgY }}
-            className="relative w-full max-w-[640px] aspect-[4/5]"
+            className="relative w-full max-w-[640px] aspect-[4/5] md:max-w-[420px]"
           >
             <div
               aria-hidden
