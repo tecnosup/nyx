@@ -38,7 +38,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       "Algodão japonês pesado 280g/m². Corte oversized, gola reforçada, acabamento lavado. Peça numerada.",
     category: "camisetas",
-    price: 289,
+    pricePix: 289,
+    priceCard: 320,
     images: [
       "https://picsum.photos/seed/nyx-p001-a/800/1000",
       "https://picsum.photos/seed/nyx-p001-b/800/1000",
@@ -64,7 +65,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       "Moletom flanelado 420g/m² em tom cru. Bordado tonal do logotipo NYX no peito. Produção limitada a 12 peças.",
     category: "moletons",
-    price: 549,
+    pricePix: 549,
+    priceCard: 610,
     images: [
       "https://picsum.photos/seed/nyx-p002-a/800/1000",
       "https://picsum.photos/seed/nyx-p002-b/800/1000",
@@ -89,7 +91,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       "Cargo em sarja pesada com cós ajustável, seis bolsos utilitários e barra reforçada. Tingimento manual.",
     category: "calcas",
-    price: 629,
+    pricePix: 629,
+    priceCard: 699,
     images: [
       "https://picsum.photos/seed/nyx-p003-a/800/1000",
       "https://picsum.photos/seed/nyx-p003-b/800/1000",
@@ -114,7 +117,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       "Coach jacket em nylon hidrofugado com forro em algodão. Silhueta reta, punhos elásticos, serigrafia nas costas.",
     category: "jaquetas",
-    price: 879,
+    pricePix: 879,
+    priceCard: 979,
     images: [
       "https://picsum.photos/seed/nyx-p004-a/800/1000",
       "https://picsum.photos/seed/nyx-p004-b/800/1000",
@@ -139,7 +143,8 @@ export const MOCK_PRODUCTS: Product[] = [
     name: "Gorro Neve Cinza",
     description: "Gorro em tricô de lã merino cinza. Etiqueta de couro na lateral, encaixe justo.",
     category: "acessorios",
-    price: 189,
+    pricePix: 189,
+    priceCard: 210,
     images: [
       "https://picsum.photos/seed/nyx-p005-a/800/1000",
       "https://picsum.photos/seed/nyx-p005-b/800/1000",
@@ -159,7 +164,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       "Peça base em algodão peruano 220g/m². Estampa do manifesto NYX em serigrafia interna. Off-white quente.",
     category: "camisetas",
-    price: 249,
+    pricePix: 249,
+    priceCard: 279,
     images: [
       "https://picsum.photos/seed/nyx-p006-a/800/1000",
       "https://picsum.photos/seed/nyx-p006-b/800/1000",
@@ -184,7 +190,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       "Construção tubular sem costura lateral, 380g/m². Tingimento sobreposto que varia peça a peça.",
     category: "moletons",
-    price: 579,
+    pricePix: 579,
+    priceCard: 645,
     images: [
       "https://picsum.photos/seed/nyx-p007-a/800/1000",
       "https://picsum.photos/seed/nyx-p007-b/800/1000",
@@ -209,7 +216,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       "Bolsa utilitária em cordura preta com alça regulável, bolso interno com zíper e etiqueta serigrafada.",
     category: "acessorios",
-    price: 349,
+    pricePix: 349,
+    priceCard: 389,
     images: [
       "https://picsum.photos/seed/nyx-p008-a/800/1000",
       "https://picsum.photos/seed/nyx-p008-b/800/1000",

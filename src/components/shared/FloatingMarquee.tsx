@@ -70,7 +70,7 @@ export function FloatingMarquee({
                   {product.name}
                 </p>
                 <p className="font-serif text-sm md:text-base text-nyx-muted whitespace-nowrap">
-                  {formatPrice(product.price)}
+                  {formatPrice(product.pricePix)}
                 </p>
               </div>
             </Link>

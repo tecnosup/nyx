@@ -17,7 +17,8 @@ export interface Product {
   name: string;
   description: string;
   category: ProductCategory;
-  price: number;
+  pricePix: number;
+  priceCard: number;
   images: string[];
   sizes: SizeStock[];
   dropId: string | null;
@@ -93,7 +94,8 @@ export interface OrderItem {
   productSlug: string;
   productName: string;
   size: ProductSize;
-  price: number;
+  pricePix: number;
+  priceCard: number;
 }
 
 export type OrderStatus = "pending" | "confirmed" | "cancelled";

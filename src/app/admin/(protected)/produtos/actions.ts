@@ -30,7 +30,8 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   const name = (formData.get("name") as string | null)?.trim() ?? "";
   const description = (formData.get("description") as string | null)?.trim() ?? "";
   const category = (formData.get("category") as string | null)?.trim() ?? "";
-  const priceRaw = formData.get("price") as string | null;
+  const pricePixRaw = formData.get("pricePix") as string | null;
+  const priceCardRaw = formData.get("priceCard") as string | null;
   const dropIdRaw = formData.get("dropId") as string | null;
   const status = formData.get("status") as ProductStatus | null;
   const slugRaw = (formData.get("slug") as string | null)?.trim() ?? "";
@@ -45,9 +46,13 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   if (!status || !STATUSES.includes(status))
     return { error: "Status inválido." };
 
-  const price = parseFloat(priceRaw ?? "");
-  if (!Number.isFinite(price) || price < 0)
-    return { error: "Preço inválido." };
+  const pricePix = parseFloat(pricePixRaw ?? "");
+  if (!Number.isFinite(pricePix) || pricePix < 0)
+    return { error: "Preço Pix inválido." };
+
+  const priceCard = parseFloat(priceCardRaw ?? "");
+  if (!Number.isFinite(priceCard) || priceCard < 0)
+    return { error: "Preço Cartão inválido." };
 
   let images: string[];
   try {
@@ -86,7 +91,8 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
     name,
     description,
     category,
-    price,
+    pricePix,
+    priceCard,
     colors,
     images,
     sizes,

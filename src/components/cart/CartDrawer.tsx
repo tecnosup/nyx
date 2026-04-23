@@ -7,7 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/utils";
 
 export function CartDrawer() {
-  const { items, count, subtotal, isOpen, closeCart, removeItem } = useCart();
+  const { items, count, subtotalPix, isOpen, closeCart, removeItem } = useCart();
 
   return (
     <>
@@ -76,7 +76,10 @@ export function CartDrawer() {
                     Tamanho {item.size}
                     {item.color && ` · ${item.color}`}
                   </p>
-                  <p className="text-sm mt-1">{formatPrice(item.price)}</p>
+                  <p className="text-sm mt-1">
+                    {formatPrice(item.pricePix)}
+                    <span className="text-nyx-muted text-xs ml-1">Pix</span>
+                  </p>
                 </div>
                 <button
                   onClick={() => removeItem(item.productSlug, item.size, item.color)}
@@ -94,10 +97,10 @@ export function CartDrawer() {
         {count > 0 && (
           <div className="px-6 py-5 border-t border-nyx-line space-y-4">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-nyx-muted">Subtotal ({count} {count === 1 ? "peça" : "peças"})</span>
-              <span className="font-medium">{formatPrice(subtotal)}</span>
+              <span className="text-nyx-muted">Subtotal Pix ({count} {count === 1 ? "peça" : "peças"})</span>
+              <span className="font-medium">{formatPrice(subtotalPix)}</span>
             </div>
-            <p className="text-xs text-nyx-muted">Frete calculado no atendimento via WhatsApp.</p>
+            <p className="text-xs text-nyx-muted">Frete e forma de pagamento confirmados no WhatsApp.</p>
             <Link
               href="/carrinho"
               onClick={closeCart}

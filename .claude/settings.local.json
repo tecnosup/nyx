@@ -16,7 +16,18 @@
       "Bash(curl -s http://localhost:3000/produtos/categoria/moletons)",
       "Bash(curl -s http://localhost:3000/drops)",
       "Bash(curl -s http://localhost:3000/drops/silencio-urbano)",
-      "Bash(git -C /c/Users/cardo/nyx status --short)"
+      "Bash(git -C /c/Users/cardo/nyx status --short)",
+      "Bash(git check-ignore *)",
+      "Bash(git push *)",
+      "Bash(npx tsc *)",
+      "Bash(git checkout *)",
+      "Bash(git merge bloco-4-admin --no-ff -m 'Merge branch '\\\\''bloco-4-admin'\\\\'' into main *)",
+      "Bash(npx next *)",
+      "Bash(git add *)",
+      "Bash(git -C c:/Users/cardo/nyx commit -m ' *)",
+      "Bash(git -C c:/Users/cardo/nyx add src/)",
+      "Bash(git -C c:/Users/cardo/nyx add tailwind.config.ts src/app/globals.css src/app/layout.tsx src/app/icon.tsx)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

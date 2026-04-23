@@ -125,7 +125,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     <div className="mt-3 flex items-start justify-between">
                       <p className="text-sm text-nyx-ink">{p.name}</p>
                       <p className="text-sm text-nyx-muted">
-                        {formatPrice(p.price)}
+                        {formatPrice(p.pricePix)}
                       </p>
                     </div>
                   </Link>

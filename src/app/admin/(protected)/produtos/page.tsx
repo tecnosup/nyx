@@ -48,7 +48,8 @@ export default async function AdminProductsPage() {
                 <th className="text-left px-4 py-3">Nome</th>
                 <th className="text-left px-4 py-3">Categoria</th>
                 <th className="text-left px-4 py-3">Drop</th>
-                <th className="text-right px-4 py-3">Preço</th>
+                <th className="text-right px-4 py-3">Pix</th>
+                <th className="text-right px-4 py-3">Cartão</th>
                 <th className="text-right px-4 py-3">Estoque</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-right px-4 py-3">Ações</th>
@@ -78,7 +79,10 @@ export default async function AdminProductsPage() {
                       {dropName ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-xs">
-                      {formatPrice(p.price)}
+                      {formatPrice(p.pricePix)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-xs text-nyx-muted">
+                      {formatPrice(p.priceCard)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-xs">
                       {stock === 0 ? (

@@ -26,7 +26,8 @@ interface Props {
     id: string;
     slug: string;
     name: string;
-    price: number;
+    pricePix: number;
+    priceCard: number;
   };
   size: ProductSize;
 }
@@ -94,7 +95,8 @@ export function CheckoutForm({ product, size }: Props) {
       productId: product.id,
       productSlug: product.slug,
       productName: product.name,
-      price: product.price,
+      pricePix: product.pricePix,
+      priceCard: product.priceCard,
       size,
       ...values,
     };
@@ -118,7 +120,12 @@ export function CheckoutForm({ product, size }: Props) {
       }
 
       const message = buildOrderMessage({
-        product: { slug: product.slug, name: product.name, price: product.price },
+        product: {
+          slug: product.slug,
+          name: product.name,
+          pricePix: product.pricePix,
+          priceCard: product.priceCard,
+        },
         size,
         shipping: values.shipping,
         paymentMethod: values.paymentMethod,

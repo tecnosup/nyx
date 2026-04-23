@@ -106,7 +106,7 @@ export function Hero({ featured, dropLabel = "Drop 01 — Disponível agora" }: 
               </span>
               <span className="text-nyx-muted">·</span>
               <span className="text-sm text-nyx-muted">
-                {formatPrice(featured.price)}
+                {formatPrice(featured.pricePix)}
               </span>
             </div>
           </motion.div>

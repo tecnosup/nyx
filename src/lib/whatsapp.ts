@@ -25,8 +25,12 @@ export function formatPhone(phone: string): string {
   return phone;
 }
 
+function effectivePrice(pricePix: number, priceCard: number, method: PaymentMethod): number {
+  return method === "cartao" ? priceCard : pricePix;
+}
+
 export interface OrderMessagePayload {
-  product: Pick<Product, "slug" | "name" | "price">;
+  product: Pick<Product, "slug" | "name" | "pricePix" | "priceCard">;
   size: ProductSize;
   shipping: ShippingAddress;
   paymentMethod: PaymentMethod;
@@ -35,6 +39,7 @@ export interface OrderMessagePayload {
 
 export function buildOrderMessage(payload: OrderMessagePayload): string {
   const { product, size, shipping, paymentMethod, notes } = payload;
+  const price = effectivePrice(product.pricePix, product.priceCard, paymentMethod);
   const complement = shipping.complement?.trim();
   const lines: string[] = [
     "Olá, Giovana! Fiz meu pedido na NYX.",
@@ -42,7 +47,8 @@ export function buildOrderMessage(payload: OrderMessagePayload): string {
     "*Peça*",
     product.name,
     `Tamanho: ${size}`,
-    `Valor: ${formatPrice(product.price)}`,
+    `Pix: ${formatPrice(product.pricePix)} · Cartão: ${formatPrice(product.priceCard)}`,
+    `Forma escolhida: ${PAYMENT_LABELS[paymentMethod]} → ${formatPrice(price)}`,
     "",
     "*Entrega*",
     shipping.name,
@@ -50,8 +56,6 @@ export function buildOrderMessage(payload: OrderMessagePayload): string {
     `${shipping.neighborhood}, ${shipping.city} — ${shipping.state}`,
     `CEP: ${formatCep(shipping.cep)}`,
     `Tel: ${formatPhone(shipping.phone)}`,
-    "",
-    `*Pagamento preferido:* ${PAYMENT_LABELS[paymentMethod]}`,
   ];
 
   if (notes && notes.trim()) {
@@ -77,7 +81,10 @@ export interface CartOrderMessagePayload {
 
 export function buildCartOrderMessage(payload: CartOrderMessagePayload): string {
   const { items, shipping, paymentMethod, notes } = payload;
-  const subtotal = items.reduce((sum, i) => sum + i.price, 0);
+  const subtotal = items.reduce(
+    (sum, i) => sum + effectivePrice(i.pricePix, i.priceCard, paymentMethod),
+    0
+  );
   const complement = shipping.complement?.trim();
 
   const lines: string[] = [
@@ -88,12 +95,13 @@ export function buildCartOrderMessage(payload: CartOrderMessagePayload): string 
 
   items.forEach((item) => {
     const colorPart = item.color ? ` · ${item.color}` : "";
-    lines.push(`• ${item.productName} — Tam. ${item.size}${colorPart} — ${formatPrice(item.price)}`);
+    const price = effectivePrice(item.pricePix, item.priceCard, paymentMethod);
+    lines.push(`• ${item.productName} — Tam. ${item.size}${colorPart} — ${formatPrice(price)}`);
   });
 
   lines.push(
     "",
-    `*Total: ${formatPrice(subtotal)}*`,
+    `*Total (${PAYMENT_LABELS[paymentMethod]}): ${formatPrice(subtotal)}*`,
     "(frete a combinar)",
     "",
     "*Entrega*",

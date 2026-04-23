@@ -43,7 +43,8 @@ export function WhatsAppCta({ product }: Props) {
       productImage: product.images[0] ?? "",
       size,
       color: color ?? undefined,
-      price: product.price,
+      pricePix: product.pricePix,
+      priceCard: product.priceCard,
     });
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 2000);
@@ -51,9 +52,16 @@ export function WhatsAppCta({ product }: Props) {
 
   return (
     <div className="space-y-6">
-      <p className="font-serif text-3xl md:text-4xl text-nyx-ink">
-        {formatPrice(product.price)}
-      </p>
+      {/* Preços */}
+      <div className="space-y-1">
+        <p className="font-serif text-3xl md:text-4xl text-nyx-ink">
+          {formatPrice(product.pricePix)}
+          <span className="ml-2 text-base font-sans text-nyx-muted font-normal">no Pix</span>
+        </p>
+        <p className="text-sm text-nyx-muted">
+          {formatPrice(product.priceCard)} no cartão
+        </p>
+      </div>
 
       {soldOut ? (
         <>
@@ -106,7 +114,6 @@ export function WhatsAppCta({ product }: Props) {
 
           {/* Botões de ação */}
           <div className="space-y-2">
-            {/* Comprar agora */}
             {canAdd ? (
               <Link
                 href={`/checkout?slug=${encodeURIComponent(product.slug)}&size=${encodeURIComponent(size!)}`}
@@ -125,7 +132,6 @@ export function WhatsAppCta({ product }: Props) {
               </button>
             )}
 
-            {/* Adicionar ao carrinho */}
             <button
               type="button"
               onClick={handleAddToCart}

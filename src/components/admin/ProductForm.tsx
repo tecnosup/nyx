@@ -32,8 +32,11 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
   const [category, setCategory] = useState<ProductCategory>(
     product?.category ?? (categories[0]?.slug ?? "camisetas")
   );
-  const [priceStr, setPriceStr] = useState<string>(
-    product ? String(product.price) : ""
+  const [pricePixStr, setPricePixStr] = useState<string>(
+    product ? String(product.pricePix) : ""
+  );
+  const [priceCardStr, setPriceCardStr] = useState<string>(
+    product ? String(product.priceCard) : ""
   );
   const [dropId, setDropId] = useState<string>(product?.dropId ?? "");
   const [status, setStatus] = useState<ProductStatus>(product?.status ?? "draft");
@@ -60,7 +63,8 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
     fd.set("slug", slug);
     fd.set("description", description);
     fd.set("category", category);
-    fd.set("price", priceStr);
+    fd.set("pricePix", pricePixStr);
+    fd.set("priceCard", priceCardStr);
     fd.set("dropId", dropId);
     fd.set("status", status);
     if (isLimited) fd.set("isLimited", "on");
@@ -108,7 +112,7 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
         />
       </Field>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
         <Field label="Categoria" required>
           <select
             required
@@ -122,18 +126,6 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
               </option>
             ))}
           </select>
-        </Field>
-        <Field label="Preço (R$)" required>
-          <input
-            required
-            type="number"
-            min={0}
-            step={0.01}
-            value={priceStr}
-            onChange={(e) => setPriceStr(e.target.value)}
-            className="input-nyx"
-            placeholder="0,00"
-          />
         </Field>
         <Field label="Drop">
           <select
@@ -149,6 +141,37 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
             ))}
           </select>
         </Field>
+      </div>
+
+      {/* Preços */}
+      <div>
+        <p className="label-mono text-nyx-muted mb-3">Preços</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Field label="Preço Pix (R$)" required>
+            <input
+              required
+              type="number"
+              min={0}
+              step={0.01}
+              value={pricePixStr}
+              onChange={(e) => setPricePixStr(e.target.value)}
+              className="input-nyx"
+              placeholder="0,00"
+            />
+          </Field>
+          <Field label="Preço Cartão (R$)" required>
+            <input
+              required
+              type="number"
+              min={0}
+              step={0.01}
+              value={priceCardStr}
+              onChange={(e) => setPriceCardStr(e.target.value)}
+              className="input-nyx"
+              placeholder="0,00"
+            />
+          </Field>
+        </div>
       </div>
 
       {/* Cores disponíveis */}

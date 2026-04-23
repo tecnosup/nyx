@@ -7,7 +7,8 @@ export interface CartItem {
   productImage: string;
   size: ProductSize;
   color?: string;
-  price: number;
+  pricePix: number;
+  priceCard: number;
 }
 
 export function cartItemKey(item: Pick<CartItem, "productSlug" | "size" | "color">): string {

@@ -60,7 +60,7 @@ export function ProductCard({ product, priority }: Props) {
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm text-nyx-ink leading-tight">{product.name}</p>
           <p className="text-sm text-nyx-muted whitespace-nowrap">
-            {formatPrice(product.price)}
+            {formatPrice(product.pricePix)}
           </p>
         </div>
         {lowStock && (

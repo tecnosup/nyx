@@ -12,7 +12,8 @@ import { type CartItem, cartItemKey } from "@/lib/cart";
 interface CartState {
   items: CartItem[];
   count: number;
-  subtotal: number;
+  subtotalPix: number;
+  subtotalCard: number;
   isOpen: boolean;
   addItem: (item: CartItem) => void;
   removeItem: (slug: string, size: string, color?: string) => void;
@@ -66,11 +67,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = useCallback(() => setIsOpen(false), []);
 
   const count = items.length;
-  const subtotal = items.reduce((sum, i) => sum + i.price, 0);
+  const subtotalPix = items.reduce((sum, i) => sum + i.pricePix, 0);
+  const subtotalCard = items.reduce((sum, i) => sum + i.priceCard, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, count, subtotal, isOpen, addItem, removeItem, clearCart, openCart, closeCart }}
+      value={{ items, count, subtotalPix, subtotalCard, isOpen, addItem, removeItem, clearCart, openCart, closeCart }}
     >
       {children}
     </CartContext.Provider>

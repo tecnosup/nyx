@@ -62,7 +62,8 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
                 id: product.id,
                 slug: product.slug,
                 name: product.name,
-                price: product.price,
+                pricePix: product.pricePix,
+                priceCard: product.priceCard,
               }}
               size={size}
             />
@@ -92,16 +93,16 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
 
               <div className="pt-4 border-t border-nyx-line space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-nyx-muted">Peça</span>
-                  <span>{formatPrice(product.price)}</span>
+                  <span className="text-nyx-muted">Pix</span>
+                  <span>{formatPrice(product.pricePix)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-nyx-muted">Cartão</span>
+                  <span>{formatPrice(product.priceCard)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-nyx-muted">Frete</span>
                   <span className="text-nyx-muted">a combinar</span>
-                </div>
-                <div className="flex justify-between pt-3 border-t border-nyx-line font-medium">
-                  <span>Total</span>
-                  <span>{formatPrice(product.price)}</span>
                 </div>
               </div>
 

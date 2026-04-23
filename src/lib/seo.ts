@@ -52,7 +52,7 @@ export function productJsonLd(product: Product): JsonLd {
     offers: {
       "@type": "Offer",
       priceCurrency: "BRL",
-      price: product.price.toFixed(2),
+      price: product.pricePix.toFixed(2),
       availability,
       url: siteUrl(`/produtos/${product.slug}`),
       seller: { "@type": "Organization", name: SITE_CONFIG.name },

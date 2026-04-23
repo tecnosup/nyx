@@ -8,7 +8,7 @@ import { CartCheckoutForm } from "@/components/checkout/CartCheckoutForm";
 import { formatPrice } from "@/lib/utils";
 
 export default function CarrinhoPage() {
-  const { items, count, subtotal, removeItem, clearCart } = useCart();
+  const { items, count, subtotalPix, subtotalCard, removeItem, clearCart } = useCart();
 
   if (count === 0) {
     return (
@@ -67,7 +67,7 @@ export default function CarrinhoPage() {
                     key={`${item.productSlug}-${item.size}-${item.color}`}
                     className="flex gap-3"
                   >
-                    <div className="relative w-14 h-18 shrink-0 bg-nyx-cream" style={{ height: "4.5rem" }}>
+                    <div className="relative w-14 shrink-0 bg-nyx-cream" style={{ height: "4.5rem" }}>
                       {item.productImage && (
                         <Image
                           src={item.productImage}
@@ -83,7 +83,10 @@ export default function CarrinhoPage() {
                       <p className="text-xs text-nyx-muted">
                         Tam. {item.size}{item.color ? ` · ${item.color}` : ""}
                       </p>
-                      <p className="text-sm mt-0.5">{formatPrice(item.price)}</p>
+                      <p className="text-sm mt-0.5">
+                        {formatPrice(item.pricePix)}
+                        <span className="text-nyx-muted text-xs ml-1">Pix</span>
+                      </p>
                     </div>
                     <button
                       onClick={() => removeItem(item.productSlug, item.size, item.color)}
@@ -97,8 +100,12 @@ export default function CarrinhoPage() {
 
               <div className="pt-4 border-t border-nyx-line space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-nyx-muted">Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
+                  <span className="text-nyx-muted">Subtotal Pix</span>
+                  <span>{formatPrice(subtotalPix)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-nyx-muted">Subtotal Cartão</span>
+                  <span>{formatPrice(subtotalCard)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-nyx-muted">Frete</span>
