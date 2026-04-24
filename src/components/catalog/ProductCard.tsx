@@ -68,7 +68,7 @@ export function ProductCard({ product, priority }: Props) {
         )}
         {product.colors && product.colors.length > 0 && (
           <p className="label-mono text-[10px] text-nyx-muted">
-            {product.colors.join(" · ")}
+            {product.colors.map((c) => c.name).join(" · ")}
           </p>
         )}
       </div>

@@ -2,11 +2,13 @@ import "server-only";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "./firebase-admin";
 import { slugify } from "./slug";
-import type {
-  Product,
-  ProductCategory,
-  ProductStatus,
-  SizeStock,
+import {
+  normalizeColors,
+  type ColorStock,
+  type Product,
+  type ProductCategory,
+  type ProductStatus,
+  type SizeStock,
 } from "./types";
 
 const COLLECTION = "products";
@@ -18,7 +20,7 @@ export interface ProductInput {
   category: ProductCategory;
   pricePix: number;
   priceCard: number;
-  colors: string[];
+  colors: ColorStock[];
   images: string[];
   sizes: SizeStock[];
   dropId: string | null;
@@ -34,7 +36,7 @@ function sanitize(input: ProductInput): Omit<Product, "id" | "createdAt" | "upda
     category: input.category,
     pricePix: Math.round(input.pricePix * 100) / 100,
     priceCard: Math.round(input.priceCard * 100) / 100,
-    colors: (input.colors ?? []).filter((c) => c.trim().length > 0),
+    colors: (input.colors ?? []).filter((c) => c.name.trim().length > 0).slice(0, 5),
     images: input.images.filter((url) => url.trim().length > 0),
     sizes: input.sizes
       .map((s) => ({ size: s.size, quantity: Math.max(0, Math.round(s.quantity)) }))
@@ -45,6 +47,10 @@ function sanitize(input: ProductInput): Omit<Product, "id" | "createdAt" | "upda
   };
 }
 
+function toProduct(id: string, data: FirebaseFirestore.DocumentData): Product {
+  return { id, ...data, colors: normalizeColors(data.colors) } as Product;
+}
+
 export async function adminListProducts(): Promise<Product[]> {
   const snap = await adminDb()
     .collection(COLLECTION)
@@ -52,7 +58,7 @@ export async function adminListProducts(): Promise<Product[]> {
     .get();
   return snap.docs
     .filter((doc) => !doc.data().deleted)
-    .map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
+    .map((doc) => toProduct(doc.id, doc.data()));
 }
 
 export async function adminListDeletedProducts(): Promise<Product[]> {
@@ -62,13 +68,13 @@ export async function adminListDeletedProducts(): Promise<Product[]> {
     .get();
   return snap.docs
     .filter((doc) => doc.data().deleted === true)
-    .map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
+    .map((doc) => toProduct(doc.id, doc.data()));
 }
 
 export async function adminGetProduct(id: string): Promise<Product | null> {
   const doc = await adminDb().collection(COLLECTION).doc(id).get();
   if (!doc.exists) return null;
-  return { id: doc.id, ...doc.data() } as Product;
+  return toProduct(doc.id, doc.data()!);
 }
 
 export async function adminCreateProduct(input: ProductInput): Promise<string> {

@@ -5,11 +5,13 @@ import Link from "next/link";
 import { ImageUploader } from "./ImageUploader";
 import { SizeStockEditor } from "./SizeStockEditor";
 import {
+  type ColorStock,
   type Drop,
   type Product,
   type ProductCategory,
   type ProductStatus,
   type SizeStock,
+  normalizeColors,
 } from "@/lib/types";
 
 interface CategoryOption {
@@ -41,7 +43,9 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
   const [dropId, setDropId] = useState<string>(product?.dropId ?? "");
   const [status, setStatus] = useState<ProductStatus>(product?.status ?? "draft");
   const [isLimited, setIsLimited] = useState<boolean>(product?.isLimited ?? true);
-  const [colors, setColors] = useState<string[]>(product?.colors ?? []);
+  const [colors, setColors] = useState<ColorStock[]>(
+    product?.colors ? normalizeColors(product.colors) : []
+  );
   const [colorInput, setColorInput] = useState("");
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [sizes, setSizes] = useState<SizeStock[]>(product?.sizes ?? []);
@@ -50,10 +54,14 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
 
   function addColor() {
     const trimmed = colorInput.trim();
-    if (trimmed && !colors.includes(trimmed) && colors.length < 5) {
-      setColors([...colors, trimmed]);
+    if (trimmed && !colors.find((c) => c.name === trimmed) && colors.length < 5) {
+      setColors([...colors, { name: trimmed, soldOut: false }]);
       setColorInput("");
     }
+  }
+
+  function toggleColorSoldOut(name: string) {
+    setColors(colors.map((c) => c.name === name ? { ...c, soldOut: !c.soldOut } : c));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -181,15 +189,31 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
           <div className="flex flex-wrap gap-2 mb-3">
             {colors.map((c) => (
               <span
-                key={c}
-                className="inline-flex items-center gap-1.5 border border-nyx-line px-3 py-1.5 text-sm"
+                key={c.name}
+                className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-sm ${
+                  c.soldOut ? "border-red-300 bg-red-50" : "border-nyx-line"
+                }`}
               >
-                {c}
+                <span className={c.soldOut ? "line-through text-nyx-muted" : ""}>{c.name}</span>
+                {c.soldOut && (
+                  <span className="text-[10px] text-red-600 font-mono uppercase">esgotado</span>
+                )}
                 <button
                   type="button"
-                  onClick={() => setColors(colors.filter((x) => x !== c))}
+                  onClick={() => toggleColorSoldOut(c.name)}
+                  className={`text-[10px] font-mono px-1 border transition-colors ${
+                    c.soldOut
+                      ? "border-green-400 text-green-700 hover:bg-green-50"
+                      : "border-amber-400 text-amber-700 hover:bg-amber-50"
+                  }`}
+                >
+                  {c.soldOut ? "reativar" : "esgotar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setColors(colors.filter((x) => x.name !== c.name))}
                   className="text-nyx-muted hover:text-nyx-ink"
-                  aria-label={`Remover ${c}`}
+                  aria-label={`Remover ${c.name}`}
                 >
                   ×
                 </button>

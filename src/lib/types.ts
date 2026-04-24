@@ -11,6 +11,22 @@ export interface SizeStock {
   quantity: number;
 }
 
+export interface ColorStock {
+  name: string;
+  soldOut: boolean;
+}
+
+export function normalizeColors(raw: unknown): ColorStock[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((c) =>
+      typeof c === "string"
+        ? { name: c, soldOut: false }
+        : { name: String((c as Record<string, unknown>)?.name ?? ""), soldOut: Boolean((c as Record<string, unknown>)?.soldOut) }
+    )
+    .filter((c) => c.name.trim().length > 0);
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -22,7 +38,7 @@ export interface Product {
   images: string[];
   sizes: SizeStock[];
   dropId: string | null;
-  colors: string[];
+  colors: ColorStock[];
   isLimited: boolean;
   status: ProductStatus;
   createdAt: number;

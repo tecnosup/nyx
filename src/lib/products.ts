@@ -10,7 +10,8 @@ import {
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
 import { MOCK_PRODUCTS } from "./mock-products";
-import type { Product, ProductCategory } from "./types";
+import { PRODUCT_CATEGORIES } from "./constants";
+import { normalizeColors, type Product, type ProductCategory } from "./types";
 
 const PRODUCTS_COLLECTION = "products";
 const MAX_CATALOG_SIZE = 25;
@@ -31,7 +32,10 @@ async function fetchPublishedFromFirestore(): Promise<Product[]> {
   );
   return snapshot.docs
     .filter((doc) => !doc.data().deleted)
-    .map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
+    .map((doc) => {
+      const data = doc.data();
+      return { id: doc.id, ...data, colors: normalizeColors(data.colors) } as Product;
+    });
 }
 
 export async function listProducts(): Promise<Product[]> {
@@ -69,6 +73,25 @@ export async function listRelatedProducts(
   return all
     .filter((p) => p.id !== product.id && p.category === product.category)
     .slice(0, max);
+}
+
+export async function listCategories(): Promise<Array<{ slug: string; label: string }>> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snap = await getDocs(
+        query(collection(db, "categories"), orderBy("order", "asc"))
+      );
+      if (!snap.empty) {
+        return snap.docs.map((d) => ({
+          slug: d.data().slug as string,
+          label: d.data().label as string,
+        }));
+      }
+    } catch {
+      // fallback below
+    }
+  }
+  return PRODUCT_CATEGORIES.map((c) => ({ slug: c.slug, label: c.label }));
 }
 
 export async function getFeaturedProduct(): Promise<Product | null> {

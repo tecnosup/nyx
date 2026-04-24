@@ -14,6 +14,7 @@ import {
 } from "@/lib/admin-products";
 import { slugify } from "@/lib/slug";
 import type {
+  ColorStock,
   ProductSize,
   ProductStatus,
   SizeStock,
@@ -76,10 +77,18 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   }
   if (sizes.length === 0) return { error: "Informe pelo menos um tamanho." };
 
-  let colors: string[];
+  let colors: ColorStock[];
   try {
     const raw = JSON.parse(colorsJson);
-    colors = Array.isArray(raw) ? raw.filter((c) => typeof c === "string") : [];
+    colors = Array.isArray(raw)
+      ? raw
+          .map((c) =>
+            typeof c === "string"
+              ? { name: c, soldOut: false }
+              : { name: String(c?.name ?? ""), soldOut: Boolean(c?.soldOut) }
+          )
+          .filter((c) => c.name.trim().length > 0)
+      : [];
   } catch {
     colors = [];
   }

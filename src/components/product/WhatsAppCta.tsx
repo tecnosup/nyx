@@ -24,9 +24,13 @@ export function WhatsAppCta({ product }: Props) {
     const avail = availableSizes(product);
     return avail.length === 1 && avail[0].size === "UNICO" ? "UNICO" : null;
   });
-  const [color, setColor] = useState<string | null>(
-    product.colors?.length === 1 ? product.colors[0] : null
-  );
+  const [color, setColor] = useState<string | null>(() => {
+    if (!product.colors?.length) return null;
+    if (product.colors.length === 1) {
+      return product.colors[0].soldOut ? null : product.colors[0].name;
+    }
+    return null;
+  });
   const [addedFeedback, setAddedFeedback] = useState(false);
 
   const level = stockLevel(product);
@@ -96,16 +100,24 @@ export function WhatsAppCta({ product }: Props) {
               <div className="flex flex-wrap gap-2">
                 {product.colors.map((c) => (
                   <button
-                    key={c}
+                    key={c.name}
                     type="button"
-                    onClick={() => setColor(c)}
+                    onClick={() => !c.soldOut && setColor(c.name)}
+                    disabled={c.soldOut}
                     className={`label-mono text-xs px-3 py-2 border transition-colors ${
-                      color === c
+                      c.soldOut
+                        ? "border-nyx-line opacity-40 cursor-not-allowed line-through"
+                        : color === c.name
                         ? "border-nyx-ink bg-nyx-ink text-nyx-bg"
                         : "border-nyx-line hover:border-nyx-ink"
                     }`}
                   >
-                    {c}
+                    {c.name}
+                    {c.soldOut && (
+                      <span className="ml-1 no-underline not-italic normal-case text-[10px]">
+                        (esgotado)
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>

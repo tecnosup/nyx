@@ -35,7 +35,7 @@ export async function createCategoryAction(
   await adminCreateCategory({ label, slug });
   revalidatePath("/admin/categorias");
   revalidatePath("/admin/produtos");
-  revalidatePath("/produtos");
+  revalidatePath("/produtos", "layout");
   redirect("/admin/categorias");
 }
 
@@ -62,7 +62,7 @@ export async function updateCategoryAction(
   await adminUpdateCategory(id, { label, slug });
   revalidatePath("/admin/categorias");
   revalidatePath("/admin/produtos");
-  revalidatePath("/produtos");
+  revalidatePath("/produtos", "layout");
   redirect("/admin/categorias");
 }
 
@@ -76,6 +76,6 @@ export async function deleteCategoryAction(id: string): Promise<ActionResult> {
   await adminDeleteCategory(id);
   revalidatePath("/admin/categorias");
   revalidatePath("/admin/produtos");
-  revalidatePath("/produtos");
+  revalidatePath("/produtos", "layout");
   return { ok: true };
 }
