@@ -1,5 +1,5 @@
 import "server-only";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "./firebase-admin";
 import { slugify } from "./slug";
 import type {
@@ -136,10 +136,22 @@ export async function writeAudit(entry: {
   entityId: string;
   summary?: string;
 }) {
-  await adminDb()
+  const db = adminDb();
+  await db.collection("auditLogs").add({
+    ...entry,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  const cutoff = Timestamp.fromMillis(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const stale = await db
     .collection("auditLogs")
-    .add({
-      ...entry,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    .where("createdAt", "<", cutoff)
+    .limit(500)
+    .get();
+
+  if (!stale.empty) {
+    const batch = db.batch();
+    stale.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  }
 }
