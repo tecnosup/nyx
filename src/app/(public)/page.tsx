@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Hero } from "@/components/landing/Hero";
+
+export const dynamic = "force-dynamic";
 import { Manifesto } from "@/components/landing/Manifesto";
 import { DropCountdown } from "@/components/landing/DropCountdown";
 import { FloatingMarquee } from "@/components/shared/FloatingMarquee";
