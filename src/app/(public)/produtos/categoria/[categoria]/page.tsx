@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { listProductsByCategory, listCategories } from "@/lib/products";
+import { listProductsByCategory } from "@/lib/products";
+import { adminListCategories } from "@/lib/admin-categories";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
 import { CategoryFilter } from "@/components/catalog/CategoryFilter";
 import { ProductGrid } from "@/components/catalog/ProductGrid";
@@ -15,7 +16,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { categoria } = await params;
-  const categories = await listCategories();
+  const categories = await adminListCategories();
   const cat = categories.find((c) => c.slug === categoria);
   if (!cat) return { title: "Categoria não encontrada" };
   return {
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CategoryPage({ params }: PageProps) {
   const { categoria } = await params;
   const [categories, products] = await Promise.all([
-    listCategories(),
+    adminListCategories(),
     listProductsByCategory(categoria),
   ]);
 

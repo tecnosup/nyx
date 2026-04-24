@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { listProducts, listCategories } from "@/lib/products";
+import { listProducts } from "@/lib/products";
+import { adminListCategories } from "@/lib/admin-categories";
 import { CategoryFilter } from "@/components/catalog/CategoryFilter";
 import { ProductGrid } from "@/components/catalog/ProductGrid";
 
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ProdutosPage() {
-  const [products, categories] = await Promise.all([listProducts(), listCategories()]);
+  const [products, categories] = await Promise.all([listProducts(), adminListCategories()]);
 
   return (
     <div className="pt-32 pb-24">
