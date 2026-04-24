@@ -7,6 +7,7 @@ import {
   adminCreateDrop,
   adminDeleteDrop,
   adminDropSlugTaken,
+  adminRestoreDrop,
   adminUpdateDrop,
   type DropInput,
 } from "@/lib/admin-drops";
@@ -128,6 +129,28 @@ export async function deleteDropAction(id: string): Promise<ActionResult> {
     actorUid: session.uid,
     actorEmail: session.email,
     action: "drop.delete",
+    entity: "drop",
+    entityId: id,
+  });
+
+  revalidatePath("/admin/drops");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function restoreDropAction(id: string): Promise<ActionResult> {
+  let session;
+  try {
+    session = await requireAdmin();
+  } catch {
+    return { ok: false, error: "Sessão inválida." };
+  }
+
+  await adminRestoreDrop(id);
+  await writeAudit({
+    actorUid: session.uid,
+    actorEmail: session.email,
+    action: "drop.restore",
     entity: "drop",
     entityId: id,
   });

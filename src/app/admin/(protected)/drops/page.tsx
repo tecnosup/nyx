@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { adminListDrops } from "@/lib/admin-drops";
+import { adminListDrops, adminListDeletedDrops } from "@/lib/admin-drops";
 import { adminListProducts } from "@/lib/admin-products";
 import { DeleteButton } from "@/components/admin/DeleteButton";
+import { RestoreButton } from "@/components/admin/RestoreButton";
 import type { DropStatus } from "@/lib/types";
-import { deleteDropAction } from "./actions";
+import { deleteDropAction, restoreDropAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,9 @@ const STATUS_LABEL: Record<DropStatus, string> = {
 };
 
 export default async function AdminDropsPage() {
-  const [drops, products] = await Promise.all([
+  const [drops, deletedDrops, products] = await Promise.all([
     adminListDrops(),
+    adminListDeletedDrops(),
     adminListProducts(),
   ]);
   const countByDrop = new Map<string, number>();
@@ -105,6 +107,43 @@ export default async function AdminDropsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {deletedDrops.length > 0 && (
+        <div className="mt-16">
+          <p className="label-mono text-nyx-muted mb-4">Lixeira</p>
+          <div className="border border-nyx-line overflow-x-auto opacity-60">
+            <table className="w-full text-sm">
+              <thead className="bg-nyx-cream/40 label-mono text-xs text-nyx-muted">
+                <tr>
+                  <th className="text-left px-4 py-3">Nome</th>
+                  <th className="text-left px-4 py-3">Lançamento</th>
+                  <th className="text-right px-4 py-3">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deletedDrops.map((d) => (
+                  <tr key={d.id} className="border-t border-nyx-line">
+                    <td className="px-4 py-3">
+                      <span className="font-medium line-through text-nyx-muted">{d.name}</span>
+                      <div className="label-mono text-[10px] text-nyx-soft mt-0.5">{d.slug}</div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-nyx-muted">
+                      {new Date(d.releaseDate).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <RestoreButton onRestore={restoreDropAction.bind(null, d.id)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

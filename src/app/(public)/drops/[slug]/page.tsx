@@ -69,10 +69,11 @@ export default async function DropDetailPage({ params }: PageProps) {
   const products = await listProductsByDrop(drop.id);
 
   return (
-    <div className="pt-32 pb-24">
+    <div className="pb-24">
       <JsonLd data={dropJsonLd(drop)} id="drop-jsonld" />
+
       {drop.heroImage && (
-        <div className="relative h-[50vh] md:h-[70vh] w-full overflow-hidden bg-nyx-cream">
+        <div className="relative h-[55vh] md:h-[72vh] w-full overflow-hidden bg-nyx-cream">
           <Image
             src={drop.heroImage}
             alt={drop.name}
@@ -81,11 +82,11 @@ export default async function DropDetailPage({ params }: PageProps) {
             sizes="100vw"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-nyx-bg/90 via-nyx-bg/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-nyx-bg/90 via-nyx-bg/20 to-transparent" />
         </div>
       )}
 
-      <div className="container-nyx -mt-32 relative">
+      <div className={`container-nyx ${drop.heroImage ? "mt-12 md:mt-16" : "pt-32"}`}>
         <Link
           href="/drops"
           className="label-mono text-nyx-muted hover:text-nyx-ink inline-flex items-center gap-1 mb-8 transition-colors"

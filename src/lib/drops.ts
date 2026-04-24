@@ -10,7 +10,9 @@ async function fetchDropsFromFirestore(): Promise<Drop[]> {
   const snapshot = await getDocs(
     query(collection(db, DROPS_COLLECTION), orderBy("releaseDate", "desc"))
   );
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Drop);
+  return snapshot.docs
+    .filter((doc) => !doc.data().deleted)
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Drop);
 }
 
 export async function listDrops(): Promise<Drop[]> {

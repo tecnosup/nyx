@@ -32,7 +32,19 @@ export async function adminListDrops(): Promise<Drop[]> {
     .collection(COLLECTION)
     .orderBy("releaseDate", "desc")
     .get();
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Drop);
+  return snap.docs
+    .filter((doc) => !doc.data().deleted)
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Drop);
+}
+
+export async function adminListDeletedDrops(): Promise<Drop[]> {
+  const snap = await adminDb()
+    .collection(COLLECTION)
+    .orderBy("releaseDate", "desc")
+    .get();
+  return snap.docs
+    .filter((doc) => doc.data().deleted === true)
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Drop);
 }
 
 export async function adminGetDrop(id: string): Promise<Drop | null> {
@@ -64,7 +76,17 @@ export async function adminUpdateDrop(
 }
 
 export async function adminDeleteDrop(id: string): Promise<void> {
-  await adminDb().collection(COLLECTION).doc(id).delete();
+  await adminDb()
+    .collection(COLLECTION)
+    .doc(id)
+    .update({ deleted: true, deletedAt: Date.now() });
+}
+
+export async function adminRestoreDrop(id: string): Promise<void> {
+  await adminDb()
+    .collection(COLLECTION)
+    .doc(id)
+    .update({ deleted: false, deletedAt: null, updatedAt: Date.now() });
 }
 
 export async function adminDropSlugTaken(

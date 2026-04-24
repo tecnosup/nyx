@@ -27,7 +27,12 @@
       "Bash(git -C c:/Users/cardo/nyx commit -m ' *)",
       "Bash(git -C c:/Users/cardo/nyx add src/)",
       "Bash(git -C c:/Users/cardo/nyx add tailwind.config.ts src/app/globals.css src/app/layout.tsx src/app/icon.tsx)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(npx vercel *)",
+      "PowerShell(git add -u)",
+      "PowerShell(git add src/components/admin/RestoreButton.tsx src/components/product/DeliveryInfo.tsx)"
     ]
   }
 }

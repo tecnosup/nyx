@@ -48,20 +48,21 @@ export function Manifesto() {
           style={{ y: titleY }}
           className="heading-display text-4xl md:text-6xl lg:text-7xl text-nyx-ink"
         >
-          Não é sobre <em className="italic">seguir</em> a moda.
-          <br />É sobre <em className="italic">sair dela</em>.
+          Nasceu de um <em className="italic">reencontro</em>.
+          <br />Cresceu como <em className="italic">negócio</em>.
         </motion.h2>
 
         <div className="mt-14 grid md:grid-cols-2 gap-8 md:gap-16 text-nyx-muted leading-relaxed text-lg">
           <motion.p style={{ y: leftY }}>
-            NYX nasceu do incômodo de ver as mesmas peças em todo mundo.
-            Vitrines clonadas, coleções inteiras fabricadas em escala, estilo
-            como commodity. A gente caça o oposto.
+            A NYX nasceu de um reencontro. Criada por quem sempre amou moda,
+            mas precisou de um empurrão da vida para transformar a paixão em
+            negócio. Hoje, selecionamos a dedo o que há de mais atual na moda
+            e nas tendências globais para elevar sua autoestima.
           </motion.p>
           <motion.p style={{ y: rightY }}>
-            Cada drop é uma garimpagem. Peças selecionadas de lugares
-            diferentes, quantidades que cabem na ponta dos dedos, e a promessa
-            de que você não vai cruzar com alguém usando a mesma coisa na rua.
+            Estamos em constante evolução, com o pé no presente e o olhar no
+            futuro: o sonho de criar nossa própria linha já está sendo
+            desenhado. Obrigada por fazer parte desse sonho.
           </motion.p>
         </div>
       </div>

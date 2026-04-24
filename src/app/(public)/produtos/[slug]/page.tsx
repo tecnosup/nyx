@@ -12,6 +12,7 @@ import { listDrops } from "@/lib/drops";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { WhatsAppCta } from "@/components/product/WhatsAppCta";
+import { DeliveryInfo } from "@/components/product/DeliveryInfo";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { formatPrice } from "@/lib/utils";
 import { productJsonLd, siteUrl } from "@/lib/seo";
@@ -91,6 +92,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <aside className="order-3">
             <div className="lg:sticky lg:top-28">
               <WhatsAppCta product={product} />
+              <DeliveryInfo />
             </div>
           </aside>
         </div>

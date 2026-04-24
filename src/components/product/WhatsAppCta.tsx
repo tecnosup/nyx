@@ -147,20 +147,6 @@ export function WhatsAppCta({ product }: Props) {
             </button>
           </div>
 
-          <div className="pt-2 space-y-1.5 text-xs text-nyx-muted">
-            <p>
-              <Link href="#" className="link-underline">
-                Guia de medidas
-              </Link>{" "}
-              →
-            </p>
-            <p>
-              <Link href="#" className="link-underline">
-                Instruções de cuidado
-              </Link>{" "}
-              →
-            </p>
-          </div>
         </>
       )}
     </div>

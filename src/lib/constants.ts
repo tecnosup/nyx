@@ -2,7 +2,7 @@ export const SITE_CONFIG = {
   name: "NYX.",
   tagline: "Streetwear em drops exclusivos",
   description:
-    "NYX é uma curadoria de peças raras, edições limitadas e drops selecionados. Cada peça é única, numerada e chega até você direto do nosso radar.",
+    "Nasceu de um reencontro com a moda. Selecionamos a dedo o que há de mais atual para elevar sua autoestima.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5512981646555",
   instagram: "https://www.instagram.com/nyxxwear_/",

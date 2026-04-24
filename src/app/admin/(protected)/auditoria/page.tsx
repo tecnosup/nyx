@@ -11,6 +11,7 @@ function actionLabel(action: string): string {
   if (action === "drop.create") return "Criou drop";
   if (action === "drop.update") return "Atualizou drop";
   if (action === "drop.delete") return "Excluiu drop";
+  if (action === "drop.restore") return "Restaurou drop";
   return action;
 }
 

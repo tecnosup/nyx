@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="border-t border-nyx-line mt-32">
       <div className="container-nyx py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
-          <div className="md:col-span-5">
+          <div className="md:col-span-4">
             <Link href="/" className="font-serif text-3xl tracking-tight">
               {SITE_CONFIG.name}
             </Link>
@@ -16,7 +16,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <h3 className="label-mono text-nyx-muted mb-6">Navegação</h3>
             <ul className="space-y-3">
               {NAVIGATION.map((item) => (
@@ -32,7 +32,7 @@ export function Footer() {
             </ul>
           </div>
 
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
             <h3 className="label-mono text-nyx-muted mb-6">Contato</h3>
             <a
               href={SITE_CONFIG.instagram}
@@ -41,11 +41,34 @@ export function Footer() {
               className="inline-flex items-center gap-2 text-nyx-ink hover:text-nyx-muted transition-colors"
             >
               <Instagram size={18} />
-              <span>@nyx</span>
+              <span>@nyxxwear_</span>
             </a>
             <p className="mt-4 text-sm text-nyx-muted">
               Siga para ficar por dentro dos próximos drops.
             </p>
+          </div>
+
+          <div className="md:col-span-3">
+            <h3 className="label-mono text-nyx-muted mb-6">Informações</h3>
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="label-mono text-xs text-nyx-soft mb-1.5">Entregas</p>
+                <p className="text-nyx-muted leading-relaxed">
+                  Seg – Sex: 08h às 12h30<br />
+                  e 18h30 às 21h30<br />
+                  Sáb e feriados: 10h às 13h
+                </p>
+                <p className="text-nyx-soft text-xs mt-1.5">
+                  Cruzeiro: R$&nbsp;5 &middot; Outras cidades: a combinar
+                </p>
+              </div>
+              <div>
+                <p className="label-mono text-xs text-nyx-soft mb-1.5">Trocas</p>
+                <p className="text-nyx-muted leading-relaxed">
+                  Até 3 dias após a compra, peça em perfeito estado e sem marcas de uso.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
