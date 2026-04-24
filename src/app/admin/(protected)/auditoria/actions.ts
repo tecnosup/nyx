@@ -72,8 +72,17 @@ export async function revertAuditAction(
     } else {
       return { ok: false, error: "Ação não reversível automaticamente." };
     }
-  } catch {
-    return { ok: false, error: "Erro ao reverter." };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("NOT_FOUND") || msg.includes("No document")) {
+      return {
+        ok: false,
+        error:
+          "Documento não encontrado no banco. Este registro foi excluído permanentemente antes da lixeira ser ativada e não pode ser recuperado.",
+      };
+    }
+    console.error("[revertAuditAction]", e);
+    return { ok: false, error: "Erro ao reverter. Tente novamente." };
   }
 
   revalidatePath("/admin/auditoria");

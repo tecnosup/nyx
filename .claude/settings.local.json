@@ -34,7 +34,10 @@
       "PowerShell(git add -u)",
       "PowerShell(git add src/components/admin/RestoreButton.tsx src/components/product/DeliveryInfo.tsx)",
       "PowerShell(git push origin main)",
-      "PowerShell(git add \"src/app/admin/\\(protected\\)/auditoria/actions.ts\")"
+      "PowerShell(git add \"src/app/admin/\\(protected\\)/auditoria/actions.ts\")",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(head -20)",
+      "PowerShell(git commit -m \"fix\\(auditoria\\): mensagem clara quando documento foi excluido antes da lixeira\")"
     ]
   }
 }

@@ -103,6 +103,7 @@ export default async function AdminAuditPage() {
                           e.entityId
                         )}
                         label={revertLabel(e.action)}
+                        pendingLabel="Revertendo…"
                       />
                     ) : (
                       <span className="text-nyx-soft label-mono text-xs">—</span>

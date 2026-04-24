@@ -7,9 +7,10 @@ type ActionResult = { ok: true } | { ok: false; error: string };
 interface Props {
   onRestore: () => Promise<ActionResult>;
   label?: string;
+  pendingLabel?: string;
 }
 
-export function RestoreButton({ onRestore, label = "Restaurar" }: Props) {
+export function RestoreButton({ onRestore, label = "Restaurar", pendingLabel = "Restaurando…" }: Props) {
   const [pending, startTransition] = useTransition();
 
   function handleClick() {
@@ -26,7 +27,7 @@ export function RestoreButton({ onRestore, label = "Restaurar" }: Props) {
       disabled={pending}
       className="label-mono text-xs text-nyx-muted hover:text-nyx-ink disabled:opacity-50"
     >
-      {pending ? "Restaurando…" : label}
+      {pending ? pendingLabel : label}
     </button>
   );
 }
