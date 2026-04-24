@@ -29,7 +29,9 @@ async function fetchPublishedFromFirestore(): Promise<Product[]> {
       limit(MAX_CATALOG_SIZE)
     )
   );
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
+  return snapshot.docs
+    .filter((doc) => !doc.data().deleted)
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
 }
 
 export async function listProducts(): Promise<Product[]> {

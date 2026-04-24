@@ -32,7 +32,9 @@
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(npx vercel *)",
       "PowerShell(git add -u)",
-      "PowerShell(git add src/components/admin/RestoreButton.tsx src/components/product/DeliveryInfo.tsx)"
+      "PowerShell(git add src/components/admin/RestoreButton.tsx src/components/product/DeliveryInfo.tsx)",
+      "PowerShell(git push origin main)",
+      "PowerShell(git add \"src/app/admin/\\(protected\\)/auditoria/actions.ts\")"
     ]
   }
 }

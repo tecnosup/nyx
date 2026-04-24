@@ -50,7 +50,19 @@ export async function adminListProducts(): Promise<Product[]> {
     .collection(COLLECTION)
     .orderBy("updatedAt", "desc")
     .get();
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
+  return snap.docs
+    .filter((doc) => !doc.data().deleted)
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
+}
+
+export async function adminListDeletedProducts(): Promise<Product[]> {
+  const snap = await adminDb()
+    .collection(COLLECTION)
+    .orderBy("updatedAt", "desc")
+    .get();
+  return snap.docs
+    .filter((doc) => doc.data().deleted === true)
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Product);
 }
 
 export async function adminGetProduct(id: string): Promise<Product | null> {
@@ -80,7 +92,17 @@ export async function adminUpdateProduct(
 }
 
 export async function adminDeleteProduct(id: string): Promise<void> {
-  await adminDb().collection(COLLECTION).doc(id).delete();
+  await adminDb()
+    .collection(COLLECTION)
+    .doc(id)
+    .update({ deleted: true, deletedAt: Date.now(), updatedAt: Date.now() });
+}
+
+export async function adminRestoreProduct(id: string): Promise<void> {
+  await adminDb()
+    .collection(COLLECTION)
+    .doc(id)
+    .update({ deleted: false, deletedAt: null, updatedAt: Date.now() });
 }
 
 export async function adminSetProductStatus(

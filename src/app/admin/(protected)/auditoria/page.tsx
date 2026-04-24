@@ -1,11 +1,22 @@
 import { adminListAudit } from "@/lib/admin-audit";
+import { RestoreButton } from "@/components/admin/RestoreButton";
+import { revertAuditAction } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+const REVERSIBLE = new Set([
+  "product.delete",
+  "product.status.published",
+  "product.status.draft",
+  "drop.delete",
+  "drop.restore",
+]);
 
 function actionLabel(action: string): string {
   if (action === "product.create") return "Criou produto";
   if (action === "product.update") return "Atualizou produto";
   if (action === "product.delete") return "Excluiu produto";
+  if (action === "product.restore") return "Restaurou produto";
   if (action === "product.status.published") return "Publicou produto";
   if (action === "product.status.draft") return "Voltou para rascunho";
   if (action === "drop.create") return "Criou drop";
@@ -13,6 +24,15 @@ function actionLabel(action: string): string {
   if (action === "drop.delete") return "Excluiu drop";
   if (action === "drop.restore") return "Restaurou drop";
   return action;
+}
+
+function revertLabel(action: string): string {
+  if (action === "product.delete") return "Restaurar";
+  if (action === "product.status.published") return "→ Rascunho";
+  if (action === "product.status.draft") return "→ Publicar";
+  if (action === "drop.delete") return "Restaurar";
+  if (action === "drop.restore") return "Re-excluir";
+  return "Reverter";
 }
 
 function formatTs(ms: number | null): string {
@@ -54,6 +74,7 @@ export default async function AdminAuditPage() {
                 <th className="text-left px-4 py-3">Ação</th>
                 <th className="text-left px-4 py-3">Entidade</th>
                 <th className="text-left px-4 py-3">Resumo</th>
+                <th className="text-right px-4 py-3">Reverter</th>
               </tr>
             </thead>
             <tbody>
@@ -71,6 +92,21 @@ export default async function AdminAuditPage() {
                   </td>
                   <td className="px-4 py-3 text-nyx-muted">
                     {e.summary ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {REVERSIBLE.has(e.action) ? (
+                      <RestoreButton
+                        onRestore={revertAuditAction.bind(
+                          null,
+                          e.action,
+                          e.entity,
+                          e.entityId
+                        )}
+                        label={revertLabel(e.action)}
+                      />
+                    ) : (
+                      <span className="text-nyx-soft label-mono text-xs">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
