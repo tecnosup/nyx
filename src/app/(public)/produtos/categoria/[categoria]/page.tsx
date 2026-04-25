@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listProductsByCategory } from "@/lib/products";
 import { adminListCategories } from "@/lib/admin-categories";
-import { PRODUCT_CATEGORIES } from "@/lib/constants";
 import { CategoryFilter } from "@/components/catalog/CategoryFilter";
 import { ProductGrid } from "@/components/catalog/ProductGrid";
+
+export const dynamicParams = true;
 
 interface PageProps {
   params: Promise<{ categoria: string }>;
 }
 
-export function generateStaticParams() {
-  return PRODUCT_CATEGORIES.map((c) => ({ categoria: c.slug }));
+export async function generateStaticParams() {
+  const categories = await adminListCategories();
+  return categories.map((c) => ({ categoria: c.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

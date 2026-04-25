@@ -16,12 +16,6 @@ export default function ReturnsPage() {
           Trocas e devoluções
         </h1>
 
-        <div className="bg-nyx-cream/60 border border-nyx-line p-4 text-xs text-nyx-muted mb-10">
-          Documento em versão inicial, baseado no Código de Defesa do
-          Consumidor (Lei 8.078/1990). Revise com assessoria jurídica antes
-          de uso com clientes finais.
-        </div>
-
         <div className="prose-nyx space-y-8 text-nyx-ink leading-relaxed">
           <section>
             <h2 className="heading-display text-2xl mb-3">

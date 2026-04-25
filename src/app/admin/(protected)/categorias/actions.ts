@@ -36,6 +36,7 @@ export async function createCategoryAction(
   revalidatePath("/admin/categorias");
   revalidatePath("/admin/produtos");
   revalidatePath("/produtos", "layout");
+  revalidatePath("/produtos/categoria", "layout");
   redirect("/admin/categorias");
 }
 
@@ -63,6 +64,7 @@ export async function updateCategoryAction(
   revalidatePath("/admin/categorias");
   revalidatePath("/admin/produtos");
   revalidatePath("/produtos", "layout");
+  revalidatePath("/produtos/categoria", "layout");
   redirect("/admin/categorias");
 }
 
@@ -77,5 +79,6 @@ export async function deleteCategoryAction(id: string): Promise<ActionResult> {
   revalidatePath("/admin/categorias");
   revalidatePath("/admin/produtos");
   revalidatePath("/produtos", "layout");
+  revalidatePath("/produtos/categoria", "layout");
   return { ok: true };
 }

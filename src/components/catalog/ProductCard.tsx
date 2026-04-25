@@ -68,7 +68,14 @@ export function ProductCard({ product, priority }: Props) {
         )}
         {product.colors && product.colors.length > 0 && (
           <p className="label-mono text-[10px] text-nyx-muted">
-            {product.colors.map((c) => c.name).join(" · ")}
+            {product.colors.map((c, i) => (
+              <span key={c.name}>
+                {i > 0 && " · "}
+                <span className={c.soldOut ? "line-through opacity-40" : ""}>
+                  {c.name}
+                </span>
+              </span>
+            ))}
           </p>
         )}
       </div>

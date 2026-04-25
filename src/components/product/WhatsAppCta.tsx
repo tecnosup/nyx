@@ -34,7 +34,8 @@ export function WhatsAppCta({ product }: Props) {
   const [addedFeedback, setAddedFeedback] = useState(false);
 
   const level = stockLevel(product);
-  const soldOut = level === "sold-out";
+  const allColorsSoldOut = (product.colors?.length ?? 0) > 0 && product.colors.every((c) => c.soldOut);
+  const soldOut = level === "sold-out" || allColorsSoldOut;
   const hasColors = product.colors && product.colors.length > 1;
   const canAdd = !!size && (!hasColors || !!color);
 

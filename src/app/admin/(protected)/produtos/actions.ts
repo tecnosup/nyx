@@ -142,6 +142,7 @@ export async function createProductAction(
   revalidatePath("/admin/produtos");
   revalidatePath("/");
   revalidatePath("/produtos");
+  revalidatePath("/produtos/categoria", "layout");
   redirect("/admin/produtos");
 }
 
@@ -178,6 +179,7 @@ export async function updateProductAction(
   revalidatePath(`/admin/produtos/${id}/editar`);
   revalidatePath("/");
   revalidatePath("/produtos");
+  revalidatePath("/produtos/categoria", "layout");
   revalidatePath(`/produtos/${slug}`);
   redirect("/admin/produtos");
 }
@@ -202,6 +204,7 @@ export async function deleteProductAction(id: string): Promise<ActionResult> {
   revalidatePath("/admin/produtos");
   revalidatePath("/");
   revalidatePath("/produtos");
+  revalidatePath("/produtos/categoria", "layout");
   return { ok: true };
 }
 
@@ -228,5 +231,6 @@ export async function toggleProductStatusAction(
   revalidatePath("/admin/produtos");
   revalidatePath("/");
   revalidatePath("/produtos");
+  revalidatePath("/produtos/categoria", "layout");
   return { ok: true };
 }
