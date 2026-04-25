@@ -97,6 +97,7 @@ export function buildCartOrderMessage(payload: CartOrderMessagePayload): string 
     const colorPart = item.color ? ` · ${item.color}` : "";
     const price = effectivePrice(item.pricePix, item.priceCard, paymentMethod);
     lines.push(`• ${item.productName} — Tam. ${item.size}${colorPart} — ${formatPrice(price)}`);
+    lines.push(`  ${SITE_CONFIG.url}/produtos/${item.productSlug}`);
   });
 
   lines.push(
