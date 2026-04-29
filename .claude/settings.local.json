@@ -37,7 +37,10 @@
       "PowerShell(git add \"src/app/admin/\\(protected\\)/auditoria/actions.ts\")",
       "PowerShell(npx tsc --noEmit 2>&1)",
       "PowerShell(head -20)",
-      "PowerShell(git commit -m \"fix\\(auditoria\\): mensagem clara quando documento foi excluido antes da lixeira\")"
+      "PowerShell(git commit -m \"fix\\(auditoria\\): mensagem clara quando documento foi excluido antes da lixeira\")",
+      "Read(//c/Users/cardo/**)",
+      "Bash(npx create-next-app@latest pasta-base --typescript --tailwind --app --src-dir --no-git --yes)",
+      "Bash(npm run *)"
     ]
   }
 }

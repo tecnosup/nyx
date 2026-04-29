@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { checkoutSchema } from "@/lib/checkout";
+import { cartCheckoutSchema } from "@/lib/checkout";
 import { checkRate, getClientIp } from "@/lib/rate-limit";
 import { adminCreateOrder } from "@/lib/admin-orders";
 import { isAdminConfigured } from "@/lib/firebase-admin";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const parsed = checkoutSchema.safeParse(body);
+  const parsed = cartCheckoutSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid_input", issues: parsed.error.flatten() },
@@ -32,23 +32,31 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { productId, productSlug, productName, pricePix, priceCard, size, color, shipping, paymentMethod, notes } = parsed.data;
+  const { items, shipping, paymentMethod, notes } = parsed.data;
 
   let orderId = `local-${Date.now()}`;
 
   if (isAdminConfigured) {
     try {
       orderId = await adminCreateOrder({
-        type: "single",
+        type: "cart",
         customerName: shipping.name,
         customerPhone: shipping.phone,
         shipping,
         paymentMethod,
-        items: [{ productId, productSlug, productName, size, color: color || undefined, pricePix, priceCard }],
+        items: items.map((i) => ({
+          productId: i.productId,
+          productSlug: i.productSlug,
+          productName: i.productName,
+          size: i.size,
+          color: i.color || undefined,
+          pricePix: i.pricePix,
+          priceCard: i.priceCard,
+        })),
         notes: notes || undefined,
       });
     } catch {
-      // Não bloqueia o checkout se o Firestore falhar — pedido segue pelo WhatsApp
+      // Não bloqueia o checkout se o Firestore falhar
     }
   }
 
