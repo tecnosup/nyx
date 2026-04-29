@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ShoppingBag } from "lucide-react";
+import { ArrowRight, ShoppingBag, PackagePlus } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/constants";
 import {
   availableSizes,
@@ -13,6 +13,7 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { SizeSelector } from "./SizeSelector";
 import { useCart } from "@/contexts/CartContext";
+import { BackorderModal } from "./BackorderModal";
 
 interface Props {
   product: Product;
@@ -32,6 +33,7 @@ export function WhatsAppCta({ product }: Props) {
     return null;
   });
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [backorderOpen, setBackorderOpen] = useState(false);
 
   const level = stockLevel(product);
   const allColorsSoldOut = (product.colors?.length ?? 0) > 0 && product.colors.every((c) => c.soldOut);
@@ -61,11 +63,15 @@ export function WhatsAppCta({ product }: Props) {
       <div className="space-y-1">
         <p className="font-serif text-3xl md:text-4xl text-nyx-ink">
           {formatPrice(product.pricePix)}
-          <span className="ml-2 text-base font-sans text-nyx-muted font-normal">no Pix</span>
+          {product.priceCard > 0 && (
+            <span className="ml-2 text-base font-sans text-nyx-muted font-normal">no Pix</span>
+          )}
         </p>
-        <p className="text-sm text-nyx-muted">
-          {formatPrice(product.priceCard)} no cartão
-        </p>
+        {product.priceCard > 0 && (
+          <p className="text-sm text-nyx-muted">
+            {formatPrice(product.priceCard)} no cartão
+          </p>
+        )}
       </div>
 
       {soldOut ? (
@@ -73,18 +79,18 @@ export function WhatsAppCta({ product }: Props) {
           <SizeSelector sizes={product.sizes} selected={null} onSelect={() => {}} />
           <button
             type="button"
-            disabled
-            className="cta-pill w-full rounded-none opacity-60 cursor-not-allowed"
+            onClick={() => setBackorderOpen(true)}
+            className="cta-pill w-full rounded-none flex items-center justify-center gap-2"
           >
-            Esgotado
+            <PackagePlus size={16} />
+            <span>Encomendar</span>
           </button>
           <p className="text-xs text-nyx-muted leading-relaxed">
-            Siga o{" "}
-            <a href={SITE_CONFIG.instagram} className="link-underline" target="_blank" rel="noopener noreferrer">
-              Instagram
-            </a>{" "}
-            para saber do próximo drop.
+            Esgotado no momento. Clique para solicitar uma encomenda — a Giovanna entra em contato.
           </p>
+          {backorderOpen && (
+            <BackorderModal product={product} onClose={() => setBackorderOpen(false)} />
+          )}
         </>
       ) : (
         <>

@@ -124,6 +124,41 @@ export function buildCartOrderMessage(payload: CartOrderMessagePayload): string 
   return lines.join("\n");
 }
 
+export interface BackorderMessagePayload {
+  product: Pick<Product, "slug" | "name" | "pricePix">;
+  size: ProductSize;
+  color?: string;
+  name: string;
+  phone: string;
+  notes?: string;
+}
+
+export function buildBackorderMessage(payload: BackorderMessagePayload): string {
+  const { product, size, color, name, phone, notes } = payload;
+  const lines: string[] = [
+    "Olá, Giovanna! Vi que um produto está esgotado na NYX e gostaria de encomendar.",
+    "",
+    "*Peça*",
+    product.name,
+    `Tamanho desejado: ${size}`,
+    ...(color ? [`Cor desejada: ${color}`] : []),
+    `Preço Pix: ${formatPrice(product.pricePix)}`,
+    `Link: ${SITE_CONFIG.url}/produtos/${product.slug}`,
+    "",
+    "*Meus dados*",
+    `Nome: ${name}`,
+    `WhatsApp: ${phone}`,
+  ];
+
+  if (notes && notes.trim()) {
+    lines.push("", `*Observações:* ${notes.trim()}`);
+  }
+
+  lines.push("", "Pode me avisar quando estiver disponível ou combinar uma encomenda?");
+
+  return lines.join("\n");
+}
+
 export function buildWhatsAppUrl(message: string): string {
   return `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${encodeURIComponent(
     message
