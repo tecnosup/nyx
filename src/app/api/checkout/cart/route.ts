@@ -55,8 +55,8 @@ export async function POST(req: NextRequest) {
         })),
         notes: notes || undefined,
       });
-    } catch {
-      // Não bloqueia o checkout se o Firestore falhar
+    } catch (err) {
+      console.error("[checkout/cart] Firestore error:", err);
     }
   }
 

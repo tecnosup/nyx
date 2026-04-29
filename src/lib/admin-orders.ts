@@ -5,7 +5,7 @@ import type { PaymentMethod, ShippingAddress } from "./types";
 const COLLECTION = "orders";
 
 export type OrderStatus = "pending" | "confirmed" | "cancelled";
-export type OrderType = "single" | "cart";
+export type OrderType = "single" | "cart" | "backorder";
 
 export interface OrderItem {
   productId: string;

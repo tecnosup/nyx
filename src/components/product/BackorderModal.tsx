@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, MessageCircle } from "lucide-react";
+import { X, MessageCircle, Loader2 } from "lucide-react";
 import { buildBackorderMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { Product, ProductSize } from "@/lib/types";
 import { SIZE_ORDER } from "@/lib/types";
@@ -49,7 +49,28 @@ export function BackorderModal({ product, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
+    try {
+      await fetch("/api/checkout/backorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          productSlug: product.slug,
+          productName: product.name,
+          pricePix: product.pricePix,
+          priceCard: product.priceCard,
+          size: values.size,
+          color: values.color || undefined,
+          name: values.name,
+          phone: values.phone,
+          notes: values.notes,
+        }),
+      });
+    } catch {
+      // não bloqueia — encomenda segue pelo WhatsApp mesmo se API falhar
+    }
+
     const message = buildBackorderMessage({
       product,
       size: values.size as ProductSize,
@@ -150,8 +171,17 @@ export function BackorderModal({ product, onClose }: Props) {
               disabled={isSubmitting}
               className="btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
-              <MessageCircle size={16} />
-              <span>Solicitar encomenda</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Enviando…</span>
+                </>
+              ) : (
+                <>
+                  <MessageCircle size={16} />
+                  <span>Solicitar encomenda</span>
+                </>
+              )}
             </button>
           </form>
         </div>
