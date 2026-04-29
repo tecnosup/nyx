@@ -9,6 +9,8 @@ import { shippingSchema, paymentMethodSchema } from "@/lib/checkout";
 import { buildCartOrderMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { PAYMENT_LABELS, type PaymentMethod } from "@/lib/types";
 import type { CartItem } from "@/lib/cart";
+import { CouponInput, calcDiscount, type AppliedCoupon } from "./CouponInput";
+import { formatPrice } from "@/lib/utils";
 
 const formSchema = z.object({
   shipping: shippingSchema,
@@ -33,6 +35,7 @@ interface Props {
 export function CartCheckoutForm({ items, onSuccess }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
 
   const {
     register,
@@ -79,6 +82,7 @@ export function CartCheckoutForm({ items, onSuccess }: Props) {
         shipping: values.shipping,
         paymentMethod: values.paymentMethod,
         notes: values.notes,
+        coupon: coupon ?? undefined,
       });
       const url = buildWhatsAppUrl(message);
       window.open(url, "_blank", "noopener,noreferrer");
@@ -159,6 +163,22 @@ export function CartCheckoutForm({ items, onSuccess }: Props) {
       <section className="space-y-3">
         <h2 className="label-mono text-nyx-muted">Observações (opcional)</h2>
         <textarea rows={3} maxLength={500} placeholder="Alguma informação extra?" className="input-nyx resize-none" {...register("notes")} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="label-mono text-nyx-muted">Cupom de desconto (opcional)</h2>
+        <CouponInput applied={coupon} onApply={setCoupon} />
+        {coupon && (() => {
+          const subtotalPix = items.reduce((s, i) => s + i.pricePix, 0);
+          const discount = calcDiscount(coupon, subtotalPix);
+          const final = Math.max(0, subtotalPix - discount);
+          return (
+            <div className="text-sm text-nyx-muted">
+              Pix: <span className="line-through">{formatPrice(subtotalPix)}</span>{" "}
+              <span className="text-nyx-ink font-semibold">{formatPrice(final)}</span>
+            </div>
+          );
+        })()}
       </section>
 
       {serverError && (

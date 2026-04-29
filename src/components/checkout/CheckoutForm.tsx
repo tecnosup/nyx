@@ -12,6 +12,8 @@ import {
   type PaymentMethod,
   type ProductSize,
 } from "@/lib/types";
+import { CouponInput, calcDiscount, type AppliedCoupon } from "./CouponInput";
+import { formatPrice } from "@/lib/utils";
 
 const formSchema = z.object({
   shipping: shippingSchema,
@@ -42,6 +44,7 @@ const PAYMENT_OPTIONS: PaymentMethod[] = [
 export function CheckoutForm({ product, size }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
 
   const {
     register,
@@ -98,6 +101,7 @@ export function CheckoutForm({ product, size }: Props) {
       pricePix: product.pricePix,
       priceCard: product.priceCard,
       size,
+      couponId: coupon?.id,
       ...values,
     };
 
@@ -130,6 +134,7 @@ export function CheckoutForm({ product, size }: Props) {
         shipping: values.shipping,
         paymentMethod: values.paymentMethod,
         notes: values.notes,
+        coupon: coupon ?? undefined,
       });
       const url = buildWhatsAppUrl(message);
       window.open(url, "_blank", "noopener,noreferrer");
@@ -280,6 +285,25 @@ export function CheckoutForm({ product, size }: Props) {
         />
         {errors.notes?.message && (
           <p className="text-sm text-red-700">{errors.notes.message}</p>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="label-mono text-nyx-muted">Cupom de desconto (opcional)</h2>
+        <CouponInput applied={coupon} onApply={setCoupon} />
+        {coupon && (
+          <div className="text-sm text-nyx-muted">
+            {(() => {
+              const discount = calcDiscount(coupon, product.pricePix);
+              const final = Math.max(0, product.pricePix - discount);
+              return (
+                <span>
+                  Pix: <span className="line-through">{formatPrice(product.pricePix)}</span>{" "}
+                  <span className="text-nyx-ink font-semibold">{formatPrice(final)}</span>
+                </span>
+              );
+            })()}
+          </div>
         )}
       </section>
 

@@ -15,10 +15,6 @@ import { normalizeColors, type Product, type ProductCategory } from "./types";
 const PRODUCTS_COLLECTION = "products";
 const MAX_CATALOG_SIZE = 25;
 
-function sortByNewest(products: Product[]): Product[] {
-  return [...products].sort((a, b) => b.updatedAt - a.updatedAt);
-}
-
 async function fetchPublishedFromFirestore(): Promise<Product[]> {
   if (!db) return [];
   const snapshot = await getDocs(

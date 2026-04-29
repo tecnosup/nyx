@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ShoppingBag, PackagePlus } from "lucide-react";
-import { SITE_CONFIG } from "@/lib/constants";
 import {
   availableSizes,
   stockLevel,

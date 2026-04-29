@@ -8,6 +8,13 @@ import {
   type ShippingAddress,
 } from "./types";
 import type { CartItem } from "./cart";
+import type { AppliedCoupon } from "@/components/checkout/CouponInput";
+
+function applyDiscount(total: number, coupon?: AppliedCoupon): number {
+  if (!coupon) return total;
+  if (coupon.type === "percent") return Math.max(0, total - Math.round(total * coupon.value) / 100);
+  return Math.max(0, total - coupon.value);
+}
 
 function digits(value: string): string {
   return value.replace(/\D/g, "");
@@ -35,11 +42,13 @@ export interface OrderMessagePayload {
   shipping: ShippingAddress;
   paymentMethod: PaymentMethod;
   notes?: string;
+  coupon?: AppliedCoupon;
 }
 
 export function buildOrderMessage(payload: OrderMessagePayload): string {
-  const { product, size, shipping, paymentMethod, notes } = payload;
-  const price = effectivePrice(product.pricePix, product.priceCard, paymentMethod);
+  const { product, size, shipping, paymentMethod, notes, coupon } = payload;
+  const basePrice = effectivePrice(product.pricePix, product.priceCard, paymentMethod);
+  const finalPrice = applyDiscount(basePrice, coupon);
   const complement = shipping.complement?.trim();
   const lines: string[] = [
     "Olá, Giovanna! Fiz meu pedido na NYX.",
@@ -48,15 +57,24 @@ export function buildOrderMessage(payload: OrderMessagePayload): string {
     product.name,
     `Tamanho: ${size}`,
     `Pix: ${formatPrice(product.pricePix)} · Cartão: ${formatPrice(product.priceCard)}`,
-    `Forma escolhida: ${PAYMENT_LABELS[paymentMethod]} → ${formatPrice(price)}`,
+    `Forma escolhida: ${PAYMENT_LABELS[paymentMethod]} → ${formatPrice(basePrice)}`,
+  ];
+
+  if (coupon) {
+    const discountLabel =
+      coupon.type === "percent" ? `${coupon.value}%` : formatPrice(coupon.value);
+    lines.push(`*Cupom: ${coupon.code} (${discountLabel} off) → Total: ${formatPrice(finalPrice)}*`);
+  }
+
+  lines.push(
     "",
     "*Entrega*",
     shipping.name,
     `${shipping.street}, ${shipping.number}${complement ? ` — ${complement}` : ""}`,
     `${shipping.neighborhood}, ${shipping.city} — ${shipping.state}`,
     `CEP: ${formatCep(shipping.cep)}`,
-    `Tel: ${formatPhone(shipping.phone)}`,
-  ];
+    `Tel: ${formatPhone(shipping.phone)}`
+  );
 
   if (notes && notes.trim()) {
     lines.push("", `*Observações:* ${notes.trim()}`);
@@ -77,14 +95,16 @@ export interface CartOrderMessagePayload {
   shipping: ShippingAddress;
   paymentMethod: PaymentMethod;
   notes?: string;
+  coupon?: AppliedCoupon;
 }
 
 export function buildCartOrderMessage(payload: CartOrderMessagePayload): string {
-  const { items, shipping, paymentMethod, notes } = payload;
+  const { items, shipping, paymentMethod, notes, coupon } = payload;
   const subtotal = items.reduce(
     (sum, i) => sum + effectivePrice(i.pricePix, i.priceCard, paymentMethod),
     0
   );
+  const finalTotal = applyDiscount(subtotal, coupon);
   const complement = shipping.complement?.trim();
 
   const lines: string[] = [
@@ -100,9 +120,23 @@ export function buildCartOrderMessage(payload: CartOrderMessagePayload): string 
     lines.push(`  ${SITE_CONFIG.url}/produtos/${item.productSlug}`);
   });
 
+  if (coupon) {
+    const discountLabel =
+      coupon.type === "percent" ? `${coupon.value}%` : formatPrice(coupon.value);
+    lines.push(
+      "",
+      `Subtotal: ${formatPrice(subtotal)}`,
+      `*Cupom: ${coupon.code} (${discountLabel} off)*`,
+      `*Total final (${PAYMENT_LABELS[paymentMethod]}): ${formatPrice(finalTotal)}*`
+    );
+  } else {
+    lines.push(
+      "",
+      `*Total (${PAYMENT_LABELS[paymentMethod]}): ${formatPrice(subtotal)}*`
+    );
+  }
+
   lines.push(
-    "",
-    `*Total (${PAYMENT_LABELS[paymentMethod]}): ${formatPrice(subtotal)}*`,
     "(frete a combinar)",
     "",
     "*Entrega*",
