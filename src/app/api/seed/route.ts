@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminDb, isAdminConfigured } from "@/lib/firebase-admin";
 import { MOCK_DROPS, MOCK_PRODUCTS } from "@/lib/mock-products";
+import { PRODUCT_CATEGORIES } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,10 @@ export async function POST(req: Request) {
     const { id, ...data } = product;
     batch.set(db.collection("products").doc(id), data, { merge: true });
   }
+  PRODUCT_CATEGORIES.forEach((cat, index) => {
+    const docRef = db.collection("categories").doc(cat.slug);
+    batch.set(docRef, { slug: cat.slug, label: cat.label, order: index }, { merge: true });
+  });
 
   await batch.commit();
 
@@ -41,5 +46,6 @@ export async function POST(req: Request) {
     ok: true,
     drops: MOCK_DROPS.length,
     products: MOCK_PRODUCTS.length,
+    categories: PRODUCT_CATEGORIES.length,
   });
 }
