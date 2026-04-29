@@ -8,6 +8,7 @@ import { AdminSignOut } from "@/app/admin/(protected)/AdminSignOut";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/produtos", label: "Produtos" },
   { href: "/admin/drops", label: "Drops" },
   { href: "/admin/categorias", label: "Categorias" },

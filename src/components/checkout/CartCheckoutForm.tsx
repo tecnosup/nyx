@@ -74,17 +74,43 @@ export function CartCheckoutForm({ items, onSuccess }: Props) {
   async function onSubmit(values: FormValues) {
     setServerError(null);
     try {
+      const res = await fetch("/api/checkout/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            productId: i.productId,
+            productSlug: i.productSlug,
+            productName: i.productName,
+            size: i.size,
+            color: i.color,
+            pricePix: i.pricePix,
+            priceCard: i.priceCard,
+          })),
+          ...values,
+        }),
+      });
+
+      if (res.status === 429) {
+        setServerError("Muitas tentativas. Tente novamente em instantes.");
+        return;
+      }
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        setServerError("Não foi possível registrar o pedido. Confira os dados.");
+        return;
+      }
+
       const message = buildCartOrderMessage({
         items,
         shipping: values.shipping,
         paymentMethod: values.paymentMethod,
         notes: values.notes,
       });
-      const url = buildWhatsAppUrl(message);
-      window.open(url, "_blank", "noopener,noreferrer");
+      window.open(buildWhatsAppUrl(message), "_blank", "noopener,noreferrer");
       onSuccess();
     } catch {
-      setServerError("Erro ao montar pedido. Tente novamente.");
+      setServerError("Erro de conexão. Tente novamente.");
     }
   }
 

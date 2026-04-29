@@ -47,6 +47,24 @@ export const checkoutSchema = z.object({
   pricePix: z.number().nonnegative().max(100_000),
   priceCard: z.number().nonnegative().max(100_000),
   size: z.string().min(1),
+  color: z.string().optional().or(z.literal("")),
+  shipping: shippingSchema,
+  paymentMethod: paymentMethodSchema,
+  notes: z.string().max(500).optional().or(z.literal("")),
+});
+
+const cartItemSchema = z.object({
+  productId: z.string().min(1),
+  productSlug: z.string().min(1),
+  productName: z.string().min(1),
+  size: z.string().min(1),
+  color: z.string().optional().or(z.literal("")),
+  pricePix: z.number().nonnegative().max(100_000),
+  priceCard: z.number().nonnegative().max(100_000),
+});
+
+export const cartCheckoutSchema = z.object({
+  items: z.array(cartItemSchema).min(1).max(20),
   shipping: shippingSchema,
   paymentMethod: paymentMethodSchema,
   notes: z.string().max(500).optional().or(z.literal("")),
@@ -54,3 +72,4 @@ export const checkoutSchema = z.object({
 
 export type ShippingInput = z.infer<typeof shippingSchema>;
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+export type CartCheckoutInput = z.infer<typeof cartCheckoutSchema>;
