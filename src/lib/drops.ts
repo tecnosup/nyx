@@ -1,6 +1,5 @@
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
-import { MOCK_DROPS } from "./mock-products";
 import type { Drop } from "./types";
 
 const DROPS_COLLECTION = "drops";
@@ -19,7 +18,7 @@ export async function listDrops(): Promise<Drop[]> {
   if (isFirebaseConfigured) {
     return fetchDropsFromFirestore();
   }
-  return [...MOCK_DROPS].sort((a, b) => b.releaseDate - a.releaseDate);
+  return [];
 }
 
 export async function getDropBySlug(slug: string): Promise<Drop | null> {

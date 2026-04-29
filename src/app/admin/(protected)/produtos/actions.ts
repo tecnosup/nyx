@@ -42,16 +42,22 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   const colorsJson = (formData.get("colors") as string | null) ?? "[]";
 
   if (name.length < 2) return { error: "Nome muito curto." };
+  if (name.length > 60) return { error: "Nome pode ter no máximo 60 caracteres." };
   if (description.length < 10) return { error: "Descrição muito curta." };
+  if (description.length > 600) return { error: "Descrição pode ter no máximo 600 caracteres." };
   if (!category) return { error: "Categoria obrigatória." };
   if (!status || !STATUSES.includes(status))
     return { error: "Status inválido." };
 
   const pricePix = parseFloat(pricePixRaw ?? "");
-  if (!Number.isFinite(pricePix) || pricePix < 0)
-    return { error: "Preço Pix inválido." };
+  if (!Number.isFinite(pricePix) || pricePix <= 0)
+    return { error: "Preço Pix obrigatório." };
 
-  const priceCard = parseFloat(priceCardRaw ?? "");
+  if (status === "published" && (!pricePixRaw || pricePix <= 0))
+    return { error: "Preço Pix é obrigatório para publicar o produto." };
+
+  const priceCardRawTrimmed = priceCardRaw?.trim() ?? "";
+  const priceCard = priceCardRawTrimmed === "" ? 0 : parseFloat(priceCardRawTrimmed);
   if (!Number.isFinite(priceCard) || priceCard < 0)
     return { error: "Preço Cartão inválido." };
 

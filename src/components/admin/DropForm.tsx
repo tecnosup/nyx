@@ -50,11 +50,13 @@ export function DropForm({ mode, drop, action }: Props) {
     <form onSubmit={handleSubmit} className="space-y-10">
       <div className="grid md:grid-cols-2 gap-6">
         <label className="block">
-          <span className="label-mono text-nyx-muted mb-2 block">
-            Nome <span className="text-nyx-ink">*</span>
+          <span className="label-mono text-nyx-muted mb-2 flex justify-between">
+            <span>Nome <span className="text-nyx-ink">*</span></span>
+            <span className="text-[10px]">{name.length}/50</span>
           </span>
           <input
             required
+            maxLength={50}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="input-nyx"
@@ -64,6 +66,7 @@ export function DropForm({ mode, drop, action }: Props) {
         <label className="block">
           <span className="label-mono text-nyx-muted mb-2 block">Slug (URL)</span>
           <input
+            maxLength={80}
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             className="input-nyx font-mono text-sm"
@@ -73,11 +76,13 @@ export function DropForm({ mode, drop, action }: Props) {
       </div>
 
       <label className="block">
-        <span className="label-mono text-nyx-muted mb-2 block">
-          Descrição <span className="text-nyx-ink">*</span>
+        <span className="label-mono text-nyx-muted mb-2 flex justify-between">
+          <span>Descrição <span className="text-nyx-ink">*</span></span>
+          <span className="text-[10px]">{description.length}/800</span>
         </span>
         <textarea
           required
+          maxLength={800}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={5}

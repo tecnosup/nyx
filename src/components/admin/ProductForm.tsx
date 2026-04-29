@@ -90,9 +90,10 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
       <div className="grid md:grid-cols-2 gap-6">
-        <Field label="Nome" required>
+        <Field label="Nome" required hint={`${name.length}/60`}>
           <input
             required
+            maxLength={60}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="input-nyx"
@@ -101,6 +102,7 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
         </Field>
         <Field label="Slug (URL)" hint="Gerado do nome se vazio">
           <input
+            maxLength={80}
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             className="input-nyx font-mono text-sm"
@@ -109,9 +111,10 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
         </Field>
       </div>
 
-      <Field label="Descrição" required>
+      <Field label="Descrição" required hint={`${description.length}/600`}>
         <textarea
           required
+          maxLength={600}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={5}
@@ -155,11 +158,11 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
       <div>
         <p className="label-mono text-nyx-muted mb-3">Preços</p>
         <div className="grid md:grid-cols-2 gap-6">
-          <Field label="Preço Pix (R$)" required>
+          <Field label="Preço Pix (R$)" required hint="Obrigatório para publicar">
             <input
               required
               type="number"
-              min={0}
+              min={0.01}
               step={0.01}
               value={pricePixStr}
               onChange={(e) => setPricePixStr(e.target.value)}
@@ -167,16 +170,15 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
               placeholder="0,00"
             />
           </Field>
-          <Field label="Preço Cartão (R$)" required>
+          <Field label="Preço Cartão (R$)" hint="Opcional — deixe vazio se não aceita cartão">
             <input
-              required
               type="number"
               min={0}
               step={0.01}
               value={priceCardStr}
               onChange={(e) => setPriceCardStr(e.target.value)}
               className="input-nyx"
-              placeholder="0,00"
+              placeholder="— opcional —"
             />
           </Field>
         </div>
@@ -225,6 +227,7 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
           <div className="flex gap-2">
             <input
               type="text"
+              maxLength={30}
               value={colorInput}
               onChange={(e) => setColorInput(e.target.value)}
               onKeyDown={(e) => {

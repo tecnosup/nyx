@@ -9,7 +9,6 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
-import { MOCK_PRODUCTS } from "./mock-products";
 import { PRODUCT_CATEGORIES } from "./constants";
 import { normalizeColors, type Product, type ProductCategory } from "./types";
 
@@ -42,10 +41,7 @@ export async function listProducts(): Promise<Product[]> {
   if (isFirebaseConfigured) {
     return fetchPublishedFromFirestore();
   }
-  return sortByNewest(MOCK_PRODUCTS.filter((p) => p.status === "published")).slice(
-    0,
-    MAX_CATALOG_SIZE
-  );
+  return [];
 }
 
 export async function listProductsByCategory(

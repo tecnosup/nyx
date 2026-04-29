@@ -26,6 +26,7 @@ export async function createCategoryAction(
   const slugRaw = (formData.get("slug") as string | null)?.trim() ?? "";
 
   if (label.length < 2) return { ok: false, error: "Nome muito curto." };
+  if (label.length > 30) return { ok: false, error: "Nome pode ter no máximo 30 caracteres." };
 
   const slug = slugRaw || slugify(label);
   if (await adminCategorySlugTaken(slug)) {
@@ -54,6 +55,7 @@ export async function updateCategoryAction(
   const slugRaw = (formData.get("slug") as string | null)?.trim() ?? "";
 
   if (label.length < 2) return { ok: false, error: "Nome muito curto." };
+  if (label.length > 30) return { ok: false, error: "Nome pode ter no máximo 30 caracteres." };
 
   const slug = slugRaw || slugify(label);
   if (await adminCategorySlugTaken(slug, id)) {

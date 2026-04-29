@@ -30,7 +30,9 @@ function parseForm(formData: FormData): DropInput | { error: string } {
   const heroImage = (formData.get("heroImage") as string | null)?.trim() ?? "";
 
   if (name.length < 2) return { error: "Nome muito curto." };
+  if (name.length > 50) return { error: "Nome pode ter no máximo 50 caracteres." };
   if (description.length < 10) return { error: "Descrição muito curta." };
+  if (description.length > 800) return { error: "Descrição pode ter no máximo 800 caracteres." };
   if (!status || !STATUSES.includes(status))
     return { error: "Status inválido." };
 

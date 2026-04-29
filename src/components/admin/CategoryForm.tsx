@@ -32,11 +32,13 @@ export function CategoryForm({ mode, category, action }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <label className="block">
-        <span className="label-mono text-nyx-muted mb-2 block">
-          Nome <span className="text-nyx-ink">*</span>
+        <span className="label-mono text-nyx-muted mb-2 flex justify-between">
+          <span>Nome <span className="text-nyx-ink">*</span></span>
+          <span className="text-[10px]">{label.length}/30</span>
         </span>
         <input
           required
+          maxLength={30}
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           className="input-nyx"
@@ -49,6 +51,7 @@ export function CategoryForm({ mode, category, action }: Props) {
           Slug (URL)
         </span>
         <input
+          maxLength={50}
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
           className="input-nyx font-mono text-sm"
