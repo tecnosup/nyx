@@ -15,9 +15,7 @@ export default async function AdminDashboardPage() {
   ]);
 
   const totalUnits = products.reduce((sum, p) => sum + totalStock(p), 0);
-  const soldOut = products.filter((p) => totalStock(p) === 0).length;
   const activeDrop = drops.find((d) => d.status === "active");
-  const upcoming = drops.filter((d) => d.status === "upcoming").length;
 
   const stats = [
     { label: "Produtos publicados", value: String(products.length) },

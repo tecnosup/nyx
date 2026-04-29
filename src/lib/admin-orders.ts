@@ -1,5 +1,4 @@
 import "server-only";
-import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "./firebase-admin";
 import type { PaymentMethod, ShippingAddress } from "./types";
 
