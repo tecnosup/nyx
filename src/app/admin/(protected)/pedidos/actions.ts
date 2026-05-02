@@ -8,10 +8,11 @@ import {
   adminCreateOrder,
   adminGetPendingCaixaOrders,
   adminMarkOrdersInCaixa,
+  adminUnmarkOrdersFromCaixa,
   type OrderStatus,
   type OrderItem,
 } from "@/lib/admin-orders";
-import { adminCloseCaixa } from "@/lib/admin-caixa";
+import { adminCloseCaixa, adminReopenCaixa } from "@/lib/admin-caixa";
 import type { PaymentMethod } from "@/lib/types";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -53,6 +54,7 @@ export async function createManualOrderAction(data: {
   paymentMethod: PaymentMethod;
   notes?: string;
   items: OrderItem[];
+  saleDate?: string;
 }): Promise<ActionResult & { id?: string }> {
   try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
 
@@ -66,6 +68,7 @@ export async function createManualOrderAction(data: {
     paymentMethod: data.paymentMethod,
     notes: data.notes?.trim(),
     items: data.items,
+    saleDate: data.saleDate,
   });
 
   revalidate();
@@ -80,8 +83,11 @@ export async function closeCaixaAction(): Promise<ActionResult & { total?: numbe
     return { ok: false, error: "Nenhum pedido concluído para fechar o caixa." };
   }
 
-  const caixaId = await adminCloseCaixa(orders);
-  await adminMarkOrdersInCaixa(orders.map((o) => o.id), caixaId);
+  const groups = await adminCloseCaixa(orders);
+
+  for (const { caixaId, orderIds } of groups) {
+    await adminMarkOrdersInCaixa(orderIds, caixaId);
+  }
 
   revalidatePath("/admin/pedidos");
   revalidatePath("/admin/financeiro");
@@ -89,4 +95,17 @@ export async function closeCaixaAction(): Promise<ActionResult & { total?: numbe
 
   const total = orders.reduce((s, o) => s + o.totalPix, 0);
   return { ok: true, total, count: orders.length };
+}
+
+export async function reopenCaixaAction(caixaId: string): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+
+  const orderIds = await adminReopenCaixa(caixaId);
+  await adminUnmarkOrdersFromCaixa(orderIds);
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin");
+
+  return { ok: true };
 }

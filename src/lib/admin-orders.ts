@@ -30,6 +30,7 @@ export interface Order {
   totalCard: number;
   notes?: string;
   caixaId?: string;
+  saleDate?: string; // "YYYY-MM-DD" override for manual/historical orders
   createdAt: number;
   updatedAt: number;
 }
@@ -42,6 +43,7 @@ export interface CreateOrderInput {
   paymentMethod: PaymentMethod;
   items: OrderItem[];
   notes?: string;
+  saleDate?: string;
 }
 
 function calcTotals(items: OrderItem[]) {
@@ -126,6 +128,19 @@ export async function adminMarkOrdersInCaixa(orderIds: string[], caixaId: string
   const batch = db.batch();
   for (const id of orderIds) {
     batch.update(db.collection(COLLECTION).doc(id), { caixaId, updatedAt: Date.now() });
+  }
+  await batch.commit();
+}
+
+export async function adminUnmarkOrdersFromCaixa(orderIds: string[]): Promise<void> {
+  const db = adminDb();
+  const { FieldValue } = await import("firebase-admin/firestore");
+  const batch = db.batch();
+  for (const id of orderIds) {
+    batch.update(db.collection(COLLECTION).doc(id), {
+      caixaId: FieldValue.delete(),
+      updatedAt: Date.now(),
+    });
   }
   await batch.commit();
 }

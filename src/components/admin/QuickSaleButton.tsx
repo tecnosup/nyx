@@ -38,12 +38,19 @@ function emptyItem(): OrderItem {
   return { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 };
 }
 
+function todayISO() {
+  return new Date().toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).split("/").reverse().join("-");
+}
+
 function QuickSaleModal({ onClose, products }: { onClose: () => void; products: Product[] }) {
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [payment, setPayment] = useState<PaymentMethod>("pix");
   const [notes, setNotes] = useState("");
+  const [saleDate, setSaleDate] = useState(todayISO());
   const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -86,7 +93,7 @@ function QuickSaleModal({ onClose, products }: { onClose: () => void; products: 
       setError("Preencha nome e valor de todos os itens."); return;
     }
     startTransition(async () => {
-      const res = await createManualOrderAction({ customerName: name.trim(), customerPhone: phone.trim(), paymentMethod: payment, notes: notes.trim(), items });
+      const res = await createManualOrderAction({ customerName: name.trim(), customerPhone: phone.trim(), paymentMethod: payment, notes: notes.trim(), items, saleDate });
       if (res.ok) { setSuccess(true); setTimeout(onClose, 1500); }
       else setError((res as { ok: false; error: string }).error);
     });
@@ -122,11 +129,23 @@ function QuickSaleModal({ onClose, products }: { onClose: () => void; products: 
               </div>
             </div>
 
-            <div>
-              <label className="label-mono text-[10px] text-nyx-muted block mb-1">Pagamento</label>
-              <select className="input-nyx" value={payment} onChange={(e) => setPayment(e.target.value as PaymentMethod)}>
-                {PAYMENT_OPTIONS.map((p) => <option key={p} value={p}>{PAYMENT_LABELS[p]}</option>)}
-              </select>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="label-mono text-[10px] text-nyx-muted block mb-1">Pagamento</label>
+                <select className="input-nyx" value={payment} onChange={(e) => setPayment(e.target.value as PaymentMethod)}>
+                  {PAYMENT_OPTIONS.map((p) => <option key={p} value={p}>{PAYMENT_LABELS[p]}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label-mono text-[10px] text-nyx-muted block mb-1">Data da venda</label>
+                <input
+                  type="date"
+                  className="input-nyx"
+                  value={saleDate}
+                  onChange={(e) => setSaleDate(e.target.value)}
+                  max={todayISO()}
+                />
+              </div>
             </div>
 
             {/* Items */}

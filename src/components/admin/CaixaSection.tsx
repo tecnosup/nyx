@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Lock, ChevronDown, ChevronUp, Unlock } from "lucide-react";
+import { Lock, ChevronDown, ChevronUp, Unlock, LockOpen } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { closeCaixaAction } from "@/app/admin/(protected)/pedidos/actions";
+import { closeCaixaAction, reopenCaixaAction } from "@/app/admin/(protected)/pedidos/actions";
 import type { Caixa } from "@/lib/admin-caixa";
 import type { Order } from "@/lib/admin-orders";
 import { PAYMENT_LABELS } from "@/lib/types";
@@ -20,6 +20,16 @@ export function CaixaSection({ caixas, pendingCount, openOrders }: Props) {
   const [error, setError] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [showOpen, setShowOpen] = useState(true);
+  const [reopeningId, setReopeningId] = useState<string | null>(null);
+
+  function handleReopen(caixaId: string) {
+    if (!confirm("Reabrir este caixa? Os pedidos voltarão para o caixa aberto e o fechamento será removido.")) return;
+    setReopeningId(caixaId);
+    startTransition(async () => {
+      await reopenCaixaAction(caixaId);
+      setReopeningId(null);
+    });
+  }
 
   function handleClose() {
     setError("");
@@ -144,23 +154,36 @@ export function CaixaSection({ caixas, pendingCount, openOrders }: Props) {
           {showHistory && (
             <div className="mt-4 pt-4 border-t border-nyx-line space-y-2">
               {caixas.map((c) => (
-                <div key={c.id} className="border border-nyx-line p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Data</p>
-                    <p className="text-nyx-ink">{c.date.split("-").reverse().join("/")}</p>
-                    <p className="text-[10px] text-nyx-muted">{c.orderCount} pedido{c.orderCount > 1 ? "s" : ""}</p>
+                <div key={c.id} className="border border-nyx-line p-4 space-y-3 text-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Data</p>
+                      <p className="text-nyx-ink">{c.date.split("-").reverse().join("/")}</p>
+                      <p className="text-[10px] text-nyx-muted">{c.orderCount} pedido{c.orderCount > 1 ? "s" : ""}</p>
+                    </div>
+                    <div>
+                      <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pix</p>
+                      <p className="text-nyx-ink">{formatPrice(c.totalPix)}</p>
+                    </div>
+                    <div>
+                      <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Cartão</p>
+                      <p className="text-nyx-ink">{formatPrice(c.totalCard)}</p>
+                    </div>
+                    <div>
+                      <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Total geral</p>
+                      <p className="text-nyx-ink font-medium">{formatPrice(c.totalGeral)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pix</p>
-                    <p className="text-nyx-ink">{formatPrice(c.totalPix)}</p>
-                  </div>
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Cartão</p>
-                    <p className="text-nyx-ink">{formatPrice(c.totalCard)}</p>
-                  </div>
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Total geral</p>
-                    <p className="text-nyx-ink font-medium">{formatPrice(c.totalGeral)}</p>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={pending && reopeningId === c.id}
+                      onClick={() => handleReopen(c.id)}
+                      className="inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-1.5 border border-nyx-line text-nyx-muted hover:text-nyx-ink hover:border-nyx-muted transition-colors disabled:opacity-40"
+                    >
+                      <LockOpen size={11} />
+                      {pending && reopeningId === c.id ? "Reabrindo…" : "Reabrir caixa"}
+                    </button>
                   </div>
                 </div>
               ))}
