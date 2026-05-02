@@ -71,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${cormorant.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${cormorant.variable}`} data-scroll-behavior="smooth">
       <body className="min-h-screen antialiased">
         {children}
         <Analytics />

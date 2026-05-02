@@ -27,8 +27,8 @@ export function ProductInfo({ product, drop }: Props) {
         </h1>
 
         <ul className="mt-6 space-y-1.5 text-sm text-nyx-muted leading-snug">
-          {bullets.map((b) => (
-            <li key={b} className="flex gap-2">
+          {bullets.map((b, i) => (
+            <li key={i} className="flex gap-2">
               <span className="text-nyx-soft">—</span>
               <span>{b}</span>
             </li>

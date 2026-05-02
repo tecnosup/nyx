@@ -12,6 +12,7 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
   body {
@@ -19,6 +20,7 @@
     color: #ede8d8;
     font-family: var(--font-inter);
     font-feature-settings: "ss01", "cv11";
+    overflow-x: hidden;
   }
 
   ::selection {
