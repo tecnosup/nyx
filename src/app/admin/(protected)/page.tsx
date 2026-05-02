@@ -4,6 +4,8 @@ import { listDrops } from "@/lib/drops";
 import { totalStock } from "@/lib/types";
 import { adminOrderStats } from "@/lib/admin-orders";
 import { formatPrice } from "@/lib/utils";
+import { Plus, ShoppingBag, TrendingUp, Package } from "lucide-react";
+import { QuickSaleButton } from "@/components/admin/QuickSaleButton";
 
 export const dynamic = "force-dynamic";
 
@@ -17,75 +19,88 @@ export default async function AdminDashboardPage() {
   const totalUnits = products.reduce((sum, p) => sum + totalStock(p), 0);
   const activeDrop = drops.find((d) => d.status === "active");
 
-  const stats = [
-    { label: "Produtos publicados", value: String(products.length) },
-    { label: "Peças em estoque", value: String(totalUnits) },
-    { label: "Pedidos pendentes", value: String(orderStats.pending), highlight: orderStats.pending > 0 },
-    { label: "Receita confirmada", value: formatPrice(orderStats.revenuePix) },
-  ];
-
   return (
-    <div className="container-nyx py-12 md:py-16">
-      <div className="mb-12">
-        <p className="label-mono text-nyx-muted mb-2">Dashboard</p>
-        <h1 className="heading-display text-3xl md:text-5xl">
-          {activeDrop ? activeDrop.name : "NYX."}
-        </h1>
-        {activeDrop && (
-          <p className="mt-3 text-sm text-nyx-muted">
-            Drop ativo ·{" "}
-            {products.filter((p) => p.dropId === activeDrop.id).length} peças
-            vinculadas
-          </p>
-        )}
+    <div className="container-nyx py-8 md:py-12">
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="label-mono text-nyx-muted mb-1">Dashboard</p>
+          <h1 className="heading-display text-3xl md:text-4xl">
+            {activeDrop ? activeDrop.name : "NYX."}
+          </h1>
+          {activeDrop && (
+            <p className="mt-1 text-sm text-nyx-muted">
+              Drop ativo · {products.filter((p) => p.dropId === activeDrop.id).length} peças vinculadas
+            </p>
+          )}
+        </div>
+
+        {/* Quick sale button */}
+        <QuickSaleButton />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-16">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className={`border p-6 ${(s as { highlight?: boolean }).highlight ? "border-amber-400 bg-amber-50/10" : "border-nyx-line bg-nyx-cream/40"}`}
-          >
-            <p className="label-mono text-nyx-muted mb-2">{s.label}</p>
-            <p className={`heading-display text-4xl ${(s as { highlight?: boolean }).highlight ? "text-amber-600" : ""}`}>{s.value}</p>
-          </div>
-        ))}
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10">
+        <KpiCard label="Produtos publicados" value={String(products.length)} />
+        <KpiCard label="Peças em estoque" value={String(totalUnits)} />
+        <KpiCard label="Pedidos pendentes" value={String(orderStats.pending)} highlight={orderStats.pending > 0} />
+        <KpiCard label="Receita confirmada" value={formatPrice(orderStats.revenuePix)} />
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <Link
+      {/* Quick actions */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <QuickLink
           href="/admin/pedidos"
-          className="border border-nyx-line p-8 hover:bg-nyx-cream/60 transition-colors block"
-        >
-          <p className="label-mono text-nyx-muted mb-3">Vendas</p>
-          <h2 className="heading-display text-2xl mb-2">Gerenciar pedidos</h2>
-          <p className="text-sm text-nyx-muted">
-            Confirmar ou cancelar pedidos recebidos pelo checkout. {orderStats.pending > 0 && <span className="text-amber-600 font-medium">{orderStats.pending} aguardando.</span>}
-          </p>
-        </Link>
-        <Link
+          category="Vendas"
+          title="Gerenciar pedidos"
+          description={`Confirmar, concluir ou cancelar pedidos.${orderStats.pending > 0 ? ` ${orderStats.pending} aguardando.` : ""}`}
+          highlight={orderStats.pending > 0}
+          icon={<ShoppingBag size={18} strokeWidth={1.5} />}
+        />
+        <QuickLink
+          href="/admin/financeiro"
+          category="Financeiro"
+          title="Ver financeiro"
+          description="Faturamento, gastos e fechamentos de caixa."
+          icon={<TrendingUp size={18} strokeWidth={1.5} />}
+        />
+        <QuickLink
           href="/admin/produtos"
-          className="border border-nyx-line p-8 hover:bg-nyx-cream/60 transition-colors block"
-        >
-          <p className="label-mono text-nyx-muted mb-3">Catálogo</p>
-          <h2 className="heading-display text-2xl mb-2">Gerenciar produtos</h2>
-          <p className="text-sm text-nyx-muted">
-            Criar, editar, publicar ou arquivar peças. Upload de imagens,
-            controle de estoque por tamanho.
-          </p>
-        </Link>
-        <Link
-          href="/admin/drops"
-          className="border border-nyx-line p-8 hover:bg-nyx-cream/60 transition-colors block"
-        >
-          <p className="label-mono text-nyx-muted mb-3">Edições</p>
-          <h2 className="heading-display text-2xl mb-2">Gerenciar drops</h2>
-          <p className="text-sm text-nyx-muted">
-            Programar novos drops, marcar como ativo, arquivar edições
-            passadas.
-          </p>
-        </Link>
+          category="Catálogo"
+          title="Gerenciar produtos"
+          description="Criar, editar, publicar ou arquivar peças."
+          icon={<Package size={18} strokeWidth={1.5} />}
+        />
       </div>
     </div>
+  );
+}
+
+function KpiCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`border p-4 md:p-5 ${highlight ? "border-amber-400 bg-amber-50/10" : "border-nyx-line bg-nyx-cream/20"}`}>
+      <p className="label-mono text-[10px] text-nyx-muted mb-1">{label}</p>
+      <p className={`heading-display text-3xl ${highlight ? "text-amber-600" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function QuickLink({ href, category, title, description, icon, highlight }: {
+  href: string; category: string; title: string; description: string; icon: React.ReactNode; highlight?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`border p-6 hover:bg-nyx-cream/40 transition-colors block group ${highlight ? "border-amber-400" : "border-nyx-line"}`}
+    >
+      <div className="flex items-center gap-2 text-nyx-muted group-hover:text-nyx-ink transition-colors mb-3">
+        {icon}
+        <p className="label-mono text-[10px]">{category}</p>
+      </div>
+      <h2 className="heading-display text-xl mb-1">{title}</h2>
+      <p className="text-xs text-nyx-muted leading-relaxed">
+        {description}
+        {highlight && <span className="text-amber-600 font-medium ml-1">Ver agora →</span>}
+      </p>
+    </Link>
   );
 }

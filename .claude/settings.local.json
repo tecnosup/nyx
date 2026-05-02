@@ -40,7 +40,8 @@
       "PowerShell(git commit -m \"fix\\(auditoria\\): mensagem clara quando documento foi excluido antes da lixeira\")",
       "Read(//c/Users/cardo/**)",
       "Bash(npx create-next-app@latest pasta-base --typescript --tailwind --app --src-dir --no-git --yes)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git config *)"
     ]
   }
 }

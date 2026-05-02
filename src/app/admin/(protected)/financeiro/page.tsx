@@ -3,6 +3,7 @@ import { adminListCaixas } from "@/lib/admin-caixa";
 import { adminOrderStats } from "@/lib/admin-orders";
 import { formatPrice } from "@/lib/utils";
 import { GastosManager } from "@/components/admin/GastosManager";
+import { FinanceiroCharts } from "@/components/admin/FinanceiroCharts";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,9 @@ export default async function FinanceiroPage() {
         <Kpi label="Lucro estimado" value={formatPrice(lucroEstimado)} highlight={lucroEstimado > 0} />
         <Kpi label="Receita total (pedidos)" value={formatPrice(orderStats.revenuePix)} />
       </div>
+
+      {/* Gráficos */}
+      <FinanceiroCharts caixas={caixas} gastos={gastos} />
 
       {/* Histórico de caixas */}
       <section className="mb-16">
