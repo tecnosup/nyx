@@ -5,13 +5,17 @@ import { Plus, X, Trash2, CheckCircle } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { createManualOrderAction } from "@/app/admin/(protected)/pedidos/actions";
 import type { OrderItem } from "@/lib/admin-orders";
-import type { PaymentMethod } from "@/lib/types";
+import type { PaymentMethod, Product } from "@/lib/types";
 import { PAYMENT_LABELS } from "@/lib/types";
 
-const SIZES = ["PP", "P", "M", "G", "GG", "UNICO"];
+const ALL_SIZES = ["PP", "P", "M", "G", "GG", "UNICO"];
 const PAYMENT_OPTIONS: PaymentMethod[] = ["pix", "cartao", "transferencia", "combinar"];
 
-export function QuickSaleButton() {
+interface Props {
+  products?: Product[];
+}
+
+export function QuickSaleButton({ products = [] }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -25,33 +29,54 @@ export function QuickSaleButton() {
         Nova venda
       </button>
 
-      {open && <QuickSaleModal onClose={() => setOpen(false)} />}
+      {open && <QuickSaleModal products={products} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function QuickSaleModal({ onClose }: { onClose: () => void }) {
+function emptyItem(): OrderItem {
+  return { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 };
+}
+
+function QuickSaleModal({ onClose, products }: { onClose: () => void; products: Product[] }) {
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [payment, setPayment] = useState<PaymentMethod>("pix");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<OrderItem[]>([
-    { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 },
-  ]);
+  const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   function addItem() {
-    setItems((p) => [...p, { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 }]);
+    setItems((p) => [...p, emptyItem()]);
   }
 
   function removeItem(i: number) {
     setItems((p) => p.filter((_, idx) => idx !== i));
   }
 
-  function updateItem(i: number, field: keyof OrderItem, value: string | number) {
-    setItems((p) => p.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+  function updateItem(i: number, patch: Partial<OrderItem>) {
+    setItems((p) => p.map((item, idx) => idx === i ? { ...item, ...patch } : item));
+  }
+
+  function selectProduct(i: number, productId: string) {
+    if (productId === "manual") {
+      updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 });
+      return;
+    }
+    const prod = products.find((p) => p.id === productId);
+    if (!prod) return;
+    const availableSizes = prod.sizes.filter((s) => s.quantity > 0).map((s) => s.size);
+    const firstSize = availableSizes[0] ?? "M";
+    updateItem(i, {
+      productId: prod.id,
+      productSlug: prod.slug,
+      productName: prod.name,
+      size: firstSize,
+      pricePix: prod.pricePix,
+      priceCard: prod.priceCard,
+    });
   }
 
   function save() {
@@ -60,21 +85,10 @@ function QuickSaleModal({ onClose }: { onClose: () => void }) {
     if (items.some((it) => !it.productName.trim() || it.pricePix <= 0)) {
       setError("Preencha nome e valor de todos os itens."); return;
     }
-
     startTransition(async () => {
-      const res = await createManualOrderAction({
-        customerName: name.trim(),
-        customerPhone: phone.trim(),
-        paymentMethod: payment,
-        notes: notes.trim(),
-        items,
-      });
-      if (res.ok) {
-        setSuccess(true);
-        setTimeout(onClose, 1500);
-      } else {
-        setError((res as { ok: false; error: string }).error);
-      }
+      const res = await createManualOrderAction({ customerName: name.trim(), customerPhone: phone.trim(), paymentMethod: payment, notes: notes.trim(), items });
+      if (res.ok) { setSuccess(true); setTimeout(onClose, 1500); }
+      else setError((res as { ok: false; error: string }).error);
     });
   }
 
@@ -115,6 +129,7 @@ function QuickSaleModal({ onClose }: { onClose: () => void }) {
               </select>
             </div>
 
+            {/* Items */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="label-mono text-[10px] text-nyx-muted">Itens *</label>
@@ -122,43 +137,86 @@ function QuickSaleModal({ onClose }: { onClose: () => void }) {
                   <Plus size={11} /> Adicionar item
                 </button>
               </div>
-              <div className="space-y-2">
-                {items.map((item, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_70px_80px_auto] gap-2 items-center">
-                    <input
-                      className="input-nyx text-xs"
-                      placeholder="Nome do produto"
-                      value={item.productName}
-                      onChange={(e) => updateItem(i, "productName", e.target.value)}
-                    />
-                    <select className="input-nyx text-xs" value={item.size} onChange={(e) => updateItem(i, "size", e.target.value)}>
-                      {SIZES.map((s) => <option key={s}>{s}</option>)}
-                    </select>
-                    <input
-                      className="input-nyx text-xs"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="R$ valor"
-                      value={item.pricePix || ""}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value) || 0;
-                        updateItem(i, "pricePix", v);
-                        updateItem(i, "priceCard", v);
-                      }}
-                    />
-                    {items.length > 1 && (
-                      <button type="button" onClick={() => removeItem(i)} className="text-nyx-soft hover:text-red-500">
-                        <Trash2 size={13} />
-                      </button>
-                    )}
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {items.map((item, i) => {
+                  const selectedProd = products.find((p) => p.id === item.productId);
+                  const availableSizes = selectedProd
+                    ? selectedProd.sizes.filter((s) => s.quantity > 0).map((s) => s.size)
+                    : ALL_SIZES;
+
+                  return (
+                    <div key={i} className="border border-nyx-line p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {/* Product select */}
+                        {products.length > 0 ? (
+                          <select
+                            className="input-nyx text-xs flex-1"
+                            value={item.productId}
+                            onChange={(e) => selectProduct(i, e.target.value)}
+                          >
+                            <option value="manual">— Digitar manualmente —</option>
+                            {products.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            className="input-nyx text-xs flex-1"
+                            placeholder="Nome do produto"
+                            value={item.productName}
+                            onChange={(e) => updateItem(i, { productName: e.target.value })}
+                          />
+                        )}
+                        {items.length > 1 && (
+                          <button type="button" onClick={() => removeItem(i)} className="text-nyx-soft hover:text-red-500 shrink-0">
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Manual name override when "manual" is selected */}
+                      {item.productId === "manual" && products.length > 0 && (
+                        <input
+                          className="input-nyx text-xs"
+                          placeholder="Nome do produto"
+                          value={item.productName}
+                          onChange={(e) => updateItem(i, { productName: e.target.value })}
+                        />
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="label-mono text-[9px] text-nyx-muted block mb-1">Tamanho</label>
+                          <select
+                            className="input-nyx text-xs"
+                            value={item.size}
+                            onChange={(e) => updateItem(i, { size: e.target.value })}
+                          >
+                            {availableSizes.map((s) => <option key={s}>{s}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="label-mono text-[9px] text-nyx-muted block mb-1">Valor (R$) *</label>
+                          <input
+                            className="input-nyx text-xs"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0,00"
+                            value={item.pricePix || ""}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value) || 0;
+                              updateItem(i, { pricePix: v, priceCard: v });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               {total > 0 && (
-                <p className="mt-2 text-sm text-right text-nyx-ink">
-                  Total: <strong>{formatPrice(total)}</strong>
-                </p>
+                <p className="mt-2 text-sm text-right text-nyx-ink">Total: <strong>{formatPrice(total)}</strong></p>
               )}
             </div>
 
@@ -170,15 +228,8 @@ function QuickSaleModal({ onClose }: { onClose: () => void }) {
             {error && <p className="text-xs text-red-500">{error}</p>}
 
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={onClose} className="label-mono text-xs px-4 py-2 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors">
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={save}
-                className="label-mono text-xs px-5 py-2 bg-nyx-ink text-nyx-bg hover:bg-nyx-muted transition-colors disabled:opacity-50"
-              >
+              <button type="button" onClick={onClose} className="label-mono text-xs px-4 py-2 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors">Cancelar</button>
+              <button type="button" disabled={pending} onClick={save} className="label-mono text-xs px-5 py-2 bg-nyx-ink text-nyx-bg hover:bg-nyx-muted transition-colors disabled:opacity-50">
                 {pending ? "Salvando…" : "Registrar venda"}
               </button>
             </div>

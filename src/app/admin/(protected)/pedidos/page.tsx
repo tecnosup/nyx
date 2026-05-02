@@ -1,5 +1,6 @@
 import { adminListOrders } from "@/lib/admin-orders";
 import { adminListCaixas } from "@/lib/admin-caixa";
+import { listProducts } from "@/lib/products";
 import { OrdersTable } from "@/components/admin/OrdersTable";
 import { CaixaSection } from "@/components/admin/CaixaSection";
 import { formatPrice } from "@/lib/utils";
@@ -7,9 +8,10 @@ import { formatPrice } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function PedidosPage() {
-  const [orders, caixas] = await Promise.all([
+  const [orders, caixas, products] = await Promise.all([
     adminListOrders(200),
     adminListCaixas(30),
+    listProducts(),
   ]);
 
   const pending = orders.filter((o) => o.status === "pending").length;
@@ -19,7 +21,8 @@ export default async function PedidosPage() {
     .filter((o) => o.status === "confirmed" || o.status === "completed")
     .reduce((s, o) => s + o.totalPix, 0);
 
-  const pendingCaixa = orders.filter((o) => o.status === "completed" && !o.caixaId).length;
+  const openCaixaOrders = orders.filter((o) => o.status === "completed" && !o.caixaId);
+  const pendingCaixa = openCaixaOrders.length;
 
   return (
     <div className="container-nyx py-12 md:py-16">
@@ -52,11 +55,11 @@ export default async function PedidosPage() {
         </div>
       ) : (
         <div className="mb-16">
-          <OrdersTable orders={orders} />
+          <OrdersTable orders={orders} products={products} />
         </div>
       )}
 
-      <CaixaSection caixas={caixas} pendingCount={pendingCaixa} />
+      <CaixaSection caixas={caixas} pendingCount={pendingCaixa} openOrders={openCaixaOrders} />
     </div>
   );
 }

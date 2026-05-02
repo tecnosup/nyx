@@ -12,7 +12,7 @@ import {
   createManualOrderAction,
 } from "@/app/admin/(protected)/pedidos/actions";
 import type { Order, OrderStatus, OrderItem } from "@/lib/admin-orders";
-import type { PaymentMethod } from "@/lib/types";
+import type { PaymentMethod, Product } from "@/lib/types";
 import { PAYMENT_LABELS } from "@/lib/types";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -29,7 +29,7 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
   cancelled: "text-nyx-soft bg-nyx-cream border-nyx-line line-through",
 };
 
-const SIZES = ["PP", "P", "M", "G", "GG", "UNICO"];
+
 const PAYMENT_OPTIONS: PaymentMethod[] = ["pix", "cartao", "transferencia", "combinar"];
 
 function whatsappConfirmUrl(order: Order): string {
@@ -39,11 +39,14 @@ function whatsappConfirmUrl(order: Order): string {
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }
 
+const ALL_SIZES = ["PP", "P", "M", "G", "GG", "UNICO"];
+
 interface Props {
   orders: Order[];
+  products?: Product[];
 }
 
-export function OrdersTable({ orders }: Props) {
+export function OrdersTable({ orders, products = [] }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showManual, setShowManual] = useState(false);
 
@@ -65,18 +68,19 @@ export function OrdersTable({ orders }: Props) {
           <OrderRow
             key={order.id}
             order={order}
+            products={products}
             isOpen={expanded === order.id}
             onToggle={() => setExpanded((p) => (p === order.id ? null : order.id))}
           />
         ))}
       </div>
 
-      {showManual && <ManualOrderModal onClose={() => setShowManual(false)} />}
+      {showManual && <ManualOrderModal products={products} onClose={() => setShowManual(false)} />}
     </div>
   );
 }
 
-function OrderRow({ order, isOpen, onToggle }: { order: Order; isOpen: boolean; onToggle: () => void }) {
+function OrderRow({ order, products, isOpen, onToggle }: { order: Order; products: Product[]; isOpen: boolean; onToggle: () => void }) {
   const [pending, startTransition] = useTransition();
   const [localStatus, setLocalStatus] = useState<OrderStatus>(order.status);
   const [editing, setEditing] = useState(false);
@@ -236,6 +240,7 @@ function OrderRow({ order, isOpen, onToggle }: { order: Order; isOpen: boolean; 
       {editing && (
         <EditOrderModal
           order={{ ...order, status: localStatus }}
+          products={products}
           onClose={() => setEditing(false)}
           onSaved={(status) => { setLocalStatus(status); setEditing(false); }}
         />
@@ -247,10 +252,12 @@ function OrderRow({ order, isOpen, onToggle }: { order: Order; isOpen: boolean; 
 /* ─── Edit Modal ─── */
 function EditOrderModal({
   order,
+  products,
   onClose,
   onSaved,
 }: {
   order: Order;
+  products: Product[];
   onClose: () => void;
   onSaved: (status: OrderStatus) => void;
 }) {
@@ -270,8 +277,16 @@ function EditOrderModal({
     setItems((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function updateItem(i: number, field: keyof OrderItem, value: string | number) {
-    setItems((prev) => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+  function updateItem(i: number, patch: Partial<OrderItem>) {
+    setItems((prev) => prev.map((item, idx) => idx === i ? { ...item, ...patch } : item));
+  }
+
+  function selectProduct(i: number, productId: string) {
+    if (productId === "manual") { updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 }); return; }
+    const prod = products.find((p) => p.id === productId);
+    if (!prod) return;
+    const firstSize = prod.sizes.filter((s) => s.quantity > 0)[0]?.size ?? "M";
+    updateItem(i, { productId: prod.id, productSlug: prod.slug, productName: prod.name, size: firstSize, pricePix: prod.pricePix, priceCard: prod.priceCard });
   }
 
   function save() {
@@ -315,19 +330,41 @@ function EditOrderModal({
               <Plus size={11} /> Adicionar
             </button>
           </div>
-          <div className="space-y-2">
-            {items.map((item, i) => (
-              <div key={i} className="grid grid-cols-[1fr_70px_80px_auto] gap-2 items-center">
-                <input className="input-nyx text-xs" placeholder="Produto" value={item.productName} onChange={(e) => updateItem(i, "productName", e.target.value)} />
-                <select className="input-nyx text-xs" value={item.size} onChange={(e) => updateItem(i, "size", e.target.value)}>
-                  {SIZES.map((s) => <option key={s}>{s}</option>)}
-                </select>
-                <input className="input-nyx text-xs" type="number" placeholder="R$ 0,00" value={item.pricePix || ""} onChange={(e) => { const v = parseFloat(e.target.value) || 0; updateItem(i, "pricePix", v); updateItem(i, "priceCard", v); }} />
-                <button type="button" onClick={() => removeItem(i)} className="text-nyx-soft hover:text-red-500">
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            ))}
+          <div className="space-y-3">
+            {items.map((item, i) => {
+              const selProd = products.find((p) => p.id === item.productId);
+              const availSizes = selProd ? selProd.sizes.filter((s) => s.quantity > 0).map((s) => s.size) : ALL_SIZES;
+              return (
+                <div key={i} className="border border-nyx-line p-3 space-y-2">
+                  <div className="flex gap-2">
+                    {products.length > 0 ? (
+                      <select className="input-nyx text-xs flex-1" value={item.productId} onChange={(e) => selectProduct(i, e.target.value)}>
+                        <option value="manual">— Digitar manualmente —</option>
+                        {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    ) : (
+                      <input className="input-nyx text-xs flex-1" placeholder="Produto" value={item.productName} onChange={(e) => updateItem(i, { productName: e.target.value })} />
+                    )}
+                    <button type="button" onClick={() => removeItem(i)} className="text-nyx-soft hover:text-red-500 shrink-0"><Trash2 size={13} /></button>
+                  </div>
+                  {item.productId === "manual" && products.length > 0 && (
+                    <input className="input-nyx text-xs" placeholder="Nome do produto" value={item.productName} onChange={(e) => updateItem(i, { productName: e.target.value })} />
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="label-mono text-[9px] text-nyx-muted block mb-1">Tamanho</label>
+                      <select className="input-nyx text-xs" value={item.size} onChange={(e) => updateItem(i, { size: e.target.value })}>
+                        {availSizes.map((s) => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label-mono text-[9px] text-nyx-muted block mb-1">Valor (R$)</label>
+                      <input className="input-nyx text-xs" type="number" placeholder="0,00" value={item.pricePix || ""} onChange={(e) => { const v = parseFloat(e.target.value) || 0; updateItem(i, { pricePix: v, priceCard: v }); }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -345,7 +382,7 @@ function EditOrderModal({
 }
 
 /* ─── Manual Order Modal ─── */
-function ManualOrderModal({ onClose }: { onClose: () => void }) {
+function ManualOrderModal({ onClose, products }: { onClose: () => void; products: Product[] }) {
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -363,8 +400,16 @@ function ManualOrderModal({ onClose }: { onClose: () => void }) {
     setItems((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function updateItem(i: number, field: keyof OrderItem, value: string | number) {
-    setItems((prev) => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+  function updateItem(i: number, patch: Partial<OrderItem>) {
+    setItems((prev) => prev.map((item, idx) => idx === i ? { ...item, ...patch } : item));
+  }
+
+  function selectProduct(i: number, productId: string) {
+    if (productId === "manual") { updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 }); return; }
+    const prod = products.find((p) => p.id === productId);
+    if (!prod) return;
+    const firstSize = prod.sizes.filter((s) => s.quantity > 0)[0]?.size ?? "M";
+    updateItem(i, { productId: prod.id, productSlug: prod.slug, productName: prod.name, size: firstSize, pricePix: prod.pricePix, priceCard: prod.priceCard });
   }
 
   function save() {
@@ -373,7 +418,6 @@ function ManualOrderModal({ onClose }: { onClose: () => void }) {
     if (items.some((it) => !it.productName.trim() || it.pricePix <= 0)) {
       setError("Preencha nome e valor de todos os itens."); return;
     }
-
     startTransition(async () => {
       const res = await createManualOrderAction({ customerName: name.trim(), customerPhone: phone.trim(), paymentMethod: payment, notes: notes.trim(), items });
       if (res.ok) { setSuccess(true); setTimeout(onClose, 1200); }
@@ -414,21 +458,43 @@ function ManualOrderModal({ onClose }: { onClose: () => void }) {
                 <Plus size={11} /> Adicionar item
               </button>
             </div>
-            <div className="space-y-2">
-              {items.map((item, i) => (
-                <div key={i} className="grid grid-cols-[1fr_70px_80px_auto] gap-2 items-center">
-                  <input className="input-nyx text-xs" placeholder="Nome do produto" value={item.productName} onChange={(e) => updateItem(i, "productName", e.target.value)} />
-                  <select className="input-nyx text-xs" value={item.size} onChange={(e) => updateItem(i, "size", e.target.value)}>
-                    {SIZES.map((s) => <option key={s}>{s}</option>)}
-                  </select>
-                  <input className="input-nyx text-xs" type="number" min="0" step="0.01" placeholder="Valor" value={item.pricePix || ""} onChange={(e) => { const v = parseFloat(e.target.value) || 0; updateItem(i, "pricePix", v); updateItem(i, "priceCard", v); }} />
-                  {items.length > 1 && (
-                    <button type="button" onClick={() => removeItem(i)} className="text-nyx-soft hover:text-red-500">
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
-              ))}
+            <div className="space-y-3">
+              {items.map((item, i) => {
+                const selProd = products.find((p) => p.id === item.productId);
+                const availSizes = selProd ? selProd.sizes.filter((s) => s.quantity > 0).map((s) => s.size) : ALL_SIZES;
+                return (
+                  <div key={i} className="border border-nyx-line p-3 space-y-2">
+                    <div className="flex gap-2">
+                      {products.length > 0 ? (
+                        <select className="input-nyx text-xs flex-1" value={item.productId} onChange={(e) => selectProduct(i, e.target.value)}>
+                          <option value="manual">— Digitar manualmente —</option>
+                          {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      ) : (
+                        <input className="input-nyx text-xs flex-1" placeholder="Nome do produto" value={item.productName} onChange={(e) => updateItem(i, { productName: e.target.value })} />
+                      )}
+                      {items.length > 1 && (
+                        <button type="button" onClick={() => removeItem(i)} className="text-nyx-soft hover:text-red-500 shrink-0"><Trash2 size={13} /></button>
+                      )}
+                    </div>
+                    {item.productId === "manual" && products.length > 0 && (
+                      <input className="input-nyx text-xs" placeholder="Nome do produto" value={item.productName} onChange={(e) => updateItem(i, { productName: e.target.value })} />
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="label-mono text-[9px] text-nyx-muted block mb-1">Tamanho</label>
+                        <select className="input-nyx text-xs" value={item.size} onChange={(e) => updateItem(i, { size: e.target.value })}>
+                          {availSizes.map((s) => <option key={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-mono text-[9px] text-nyx-muted block mb-1">Valor (R$) *</label>
+                        <input className="input-nyx text-xs" type="number" min="0" step="0.01" placeholder="0,00" value={item.pricePix || ""} onChange={(e) => { const v = parseFloat(e.target.value) || 0; updateItem(i, { pricePix: v, priceCard: v }); }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             {total > 0 && (
               <p className="mt-2 text-sm text-right text-nyx-ink">Total: <strong>{formatPrice(total)}</strong></p>

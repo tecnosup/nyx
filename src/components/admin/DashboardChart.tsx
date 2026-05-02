@@ -1,13 +1,13 @@
 "use client";
 
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, Tooltip,
+  AreaChart, Area, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import type { Caixa } from "@/lib/admin-caixa";
 import type { Gasto } from "@/lib/admin-gastos";
 
-function fmt(val: number) {
+function fmtShort(val: number) {
   if (val >= 1000) return `R$${(val / 1000).toFixed(1)}k`;
   return `R$${val.toFixed(0)}`;
 }
@@ -15,6 +15,8 @@ function fmt(val: number) {
 function fmtFull(val: number) {
   return `R$ ${val.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 }
+
+const MONTH_NAMES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 interface Props {
   caixas: Caixa[];
@@ -26,30 +28,80 @@ export function DashboardChart({ caixas, gastos }: Props) {
     .filter((g) => g.active && g.frequency === "mensal")
     .reduce((s, g) => s + g.amount, 0);
 
-  const barData = [...caixas]
-    .reverse()
-    .slice(-20)
-    .map((c) => ({
-      date: c.date.split("-").slice(1).join("/"),
-      faturamento: c.totalGeral,
-      gastos: Math.round(monthlyExpenses / 30),
+  // Group by month
+  const byMonth: Record<string, number> = {};
+  for (const c of caixas) {
+    const [year, month] = c.date.split("-");
+    const key = `${year}-${month}`;
+    byMonth[key] = (byMonth[key] || 0) + c.totalGeral;
+  }
+
+  const monthData = Object.entries(byMonth)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-6)
+    .map(([key, total]) => ({
+      label: MONTH_NAMES[parseInt(key.split("-")[1], 10) - 1],
+      total,
     }));
 
-  if (barData.length === 0) {
+  // Summary stats
+  const now = new Date();
+  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const currentMonthRevenue = byMonth[currentKey] || 0;
+
+  const bestMonth = Object.entries(byMonth).reduce(
+    (best, [key, total]) => (total > best.total ? { key, total } : best),
+    { key: "", total: 0 }
+  );
+  const bestMonthName = bestMonth.key
+    ? MONTH_NAMES[parseInt(bestMonth.key.split("-")[1], 10) - 1]
+    : null;
+
+  if (monthData.length === 0) {
     return (
-      <div className="h-52 flex items-center justify-center">
+      <div className="h-52 flex flex-col items-center justify-center gap-2">
         <p className="text-xs text-nyx-soft">Nenhum fechamento de caixa ainda.</p>
+        <p className="text-[10px] text-nyx-soft/60">Feche o caixa em Pedidos para ver o gráfico.</p>
       </div>
     );
   }
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={210}>
-        <ComposedChart data={barData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
+      {/* Summary */}
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="label-mono text-[9px] text-nyx-muted mb-1">Receita acumulada</p>
+          <p className="heading-display text-2xl md:text-3xl text-nyx-ink">
+            {fmtFull(currentMonthRevenue)}
+          </p>
+          {bestMonthName && bestMonth.total > 0 && (
+            <p className="text-[10px] text-nyx-muted mt-1">
+              Melhor mês: <span className="text-nyx-soft capitalize">{bestMonthName}</span>
+              {" · "}{fmtFull(bestMonth.total)}
+            </p>
+          )}
+        </div>
+        {monthlyExpenses > 0 && (
+          <div className="text-right shrink-0">
+            <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Gastos/mês</p>
+            <p className="text-sm text-nyx-soft">{fmtFull(monthlyExpenses)}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Chart */}
+      <ResponsiveContainer width="100%" height={160}>
+        <AreaChart data={monthData} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="gradFat" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ede8d8" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="#ede8d8" stopOpacity={0} />
+            </linearGradient>
+          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2820" vertical={false} />
           <XAxis
-            dataKey="date"
+            dataKey="label"
             tick={{ fontSize: 9, fill: "#5c5a4f" }}
             axisLine={false}
             tickLine={false}
@@ -58,7 +110,7 @@ export function DashboardChart({ caixas, gastos }: Props) {
             tick={{ fontSize: 9, fill: "#5c5a4f" }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={fmt}
+            tickFormatter={fmtShort}
           />
           <Tooltip
             contentStyle={{
@@ -68,39 +120,21 @@ export function DashboardChart({ caixas, gastos }: Props) {
               fontSize: 11,
               padding: "8px 12px",
             }}
-            labelStyle={{ color: "#ede8d8", marginBottom: 4, fontSize: 10 }}
+            labelStyle={{ color: "#ede8d8", marginBottom: 4, fontSize: 10, textTransform: "capitalize" }}
             itemStyle={{ color: "#8c8578" }}
-            formatter={(value, name) => [
-              fmtFull(Number(value ?? 0)),
-              name === "faturamento" ? "Faturamento" : "Gasto diário estimado",
-            ]}
+            formatter={(value) => [fmtFull(Number(value ?? 0)), "Faturamento"]}
           />
-          <Bar dataKey="faturamento" fill="#ede8d8" radius={[3, 3, 0, 0]} maxBarSize={32} />
-          {monthlyExpenses > 0 && (
-            <Line
-              type="monotone"
-              dataKey="gastos"
-              stroke="#8c8578"
-              strokeWidth={1.5}
-              dot={false}
-              strokeDasharray="4 2"
-            />
-          )}
-        </ComposedChart>
+          <Area
+            type="monotone"
+            dataKey="total"
+            stroke="#ede8d8"
+            strokeWidth={1.5}
+            fill="url(#gradFat)"
+            dot={false}
+            activeDot={{ r: 3, fill: "#ede8d8", stroke: "#100f0a", strokeWidth: 2 }}
+          />
+        </AreaChart>
       </ResponsiveContainer>
-
-      <div className="flex gap-5 mt-2">
-        <span className="flex items-center gap-1.5 text-[9px] text-nyx-muted">
-          <span className="w-2.5 h-2.5 rounded-sm inline-block bg-nyx-ink" />
-          Faturamento
-        </span>
-        {monthlyExpenses > 0 && (
-          <span className="flex items-center gap-1.5 text-[9px] text-nyx-muted">
-            <span className="w-4 h-px inline-block bg-nyx-muted" style={{ borderTop: "1.5px dashed #8c8578" }} />
-            Gasto diário
-          </span>
-        )}
-      </div>
     </div>
   );
 }

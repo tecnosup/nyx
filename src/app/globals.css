@@ -27,6 +27,17 @@
     background-color: #ede8d8;
     color: #100f0a;
   }
+
+  /* Select dropdowns — força fundo escuro globalmente */
+  select option {
+    background-color: #100f0a;
+    color: #ede8d8;
+  }
+
+  select {
+    background-color: #100f0a;
+    color: #ede8d8;
+  }
 }
 
 @layer components {

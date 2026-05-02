@@ -80,7 +80,7 @@ export default async function AdminDashboardPage() {
             </p>
           )}
         </div>
-        <QuickSaleButton />
+        <QuickSaleButton products={products} />
       </div>
 
       {/* ── Alert: pedidos pendentes ── */}
