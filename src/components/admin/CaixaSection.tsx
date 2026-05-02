@@ -55,8 +55,8 @@ export function CaixaSection({ caixas, pendingCount, openOrders }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Open caixa summary */}
-      <div className="border border-nyx-line p-5">
+      {/* Open caixa summary — only shown when there are pending orders */}
+      {pendingCount > 0 && <div className="border border-nyx-line p-5">
         <button
           type="button"
           onClick={() => setShowOpen((p) => !p)}
@@ -131,7 +131,7 @@ export function CaixaSection({ caixas, pendingCount, openOrders }: Props) {
             {error && <p className="text-xs text-red-500">{error}</p>}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* History */}
       {caixas.length > 0 && (

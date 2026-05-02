@@ -9,6 +9,7 @@ import {
   adminGetPendingCaixaOrders,
   adminMarkOrdersInCaixa,
   adminUnmarkOrdersFromCaixa,
+  type Order,
   type OrderStatus,
   type OrderItem,
 } from "@/lib/admin-orders";
@@ -55,12 +56,14 @@ export async function createManualOrderAction(data: {
   notes?: string;
   items: OrderItem[];
   saleDate?: string;
+  createAsCompleted?: boolean;
 }): Promise<ActionResult & { id?: string }> {
   try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
 
   if (!data.customerName.trim()) return { ok: false, error: "Nome do cliente obrigatório." };
   if (data.items.length === 0) return { ok: false, error: "Adicione ao menos um item." };
 
+  const now = Date.now();
   const id = await adminCreateOrder({
     type: "manual",
     customerName: data.customerName.trim(),
@@ -70,6 +73,33 @@ export async function createManualOrderAction(data: {
     items: data.items,
     saleDate: data.saleDate,
   });
+
+  if (data.createAsCompleted) {
+    await adminSetOrderStatus(id, "completed");
+
+    // Auto-close into the caixa for that date (past or today)
+    const totalPix = data.items.reduce((s, i) => s + i.pricePix, 0);
+    const totalCard = data.items.reduce((s, i) => s + i.priceCard, 0);
+    const fakeOrder: Order = {
+      id,
+      type: "manual",
+      status: "completed",
+      customerName: data.customerName.trim(),
+      customerPhone: data.customerPhone.trim(),
+      paymentMethod: data.paymentMethod,
+      items: data.items,
+      totalPix,
+      totalCard,
+      saleDate: data.saleDate,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const groups = await adminCloseCaixa([fakeOrder]);
+    for (const { caixaId, orderIds } of groups) {
+      await adminMarkOrdersInCaixa(orderIds, caixaId);
+    }
+    revalidatePath("/admin/financeiro");
+  }
 
   revalidate();
   return { ok: true, id };

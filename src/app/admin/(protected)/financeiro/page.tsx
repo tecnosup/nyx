@@ -4,6 +4,7 @@ import { adminOrderStats } from "@/lib/admin-orders";
 import { formatPrice } from "@/lib/utils";
 import { GastosManager } from "@/components/admin/GastosManager";
 import { FinanceiroCharts } from "@/components/admin/FinanceiroCharts";
+import { DashboardChart } from "@/components/admin/DashboardChart";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,13 @@ export default async function FinanceiroPage() {
       </div>
 
       {/* Gráficos */}
-      <FinanceiroCharts caixas={caixas} gastos={gastos} />
+      <div className="grid md:grid-cols-[1fr_320px] gap-4 mb-12">
+        <div className="border border-nyx-line p-5">
+          <p className="label-mono text-[10px] text-nyx-muted mb-4">Faturamento por fechamento de caixa</p>
+          <DashboardChart caixas={caixas} gastos={gastos} />
+        </div>
+        <FinanceiroCharts gastos={gastos} />
+      </div>
 
       {/* Histórico de caixas */}
       <section className="mb-16">

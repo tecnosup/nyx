@@ -51,6 +51,7 @@ function QuickSaleModal({ onClose, products }: { onClose: () => void; products: 
   const [payment, setPayment] = useState<PaymentMethod>("pix");
   const [notes, setNotes] = useState("");
   const [saleDate, setSaleDate] = useState(todayISO());
+  const [alreadyDone, setAlreadyDone] = useState(false);
   const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -93,7 +94,7 @@ function QuickSaleModal({ onClose, products }: { onClose: () => void; products: 
       setError("Preencha nome e valor de todos os itens."); return;
     }
     startTransition(async () => {
-      const res = await createManualOrderAction({ customerName: name.trim(), customerPhone: phone.trim(), paymentMethod: payment, notes: notes.trim(), items, saleDate });
+      const res = await createManualOrderAction({ customerName: name.trim(), customerPhone: phone.trim(), paymentMethod: payment, notes: notes.trim(), items, saleDate, createAsCompleted: alreadyDone });
       if (res.ok) { setSuccess(true); setTimeout(onClose, 1500); }
       else setError((res as { ok: false; error: string }).error);
     });
@@ -142,11 +143,26 @@ function QuickSaleModal({ onClose, products }: { onClose: () => void; products: 
                   type="date"
                   className="input-nyx"
                   value={saleDate}
-                  onChange={(e) => setSaleDate(e.target.value)}
+                  onChange={(e) => {
+                    setSaleDate(e.target.value);
+                    setAlreadyDone(e.target.value < todayISO());
+                  }}
                   max={todayISO()}
                 />
               </div>
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={alreadyDone}
+                onChange={(e) => setAlreadyDone(e.target.checked)}
+                className="accent-emerald-500"
+              />
+              <span className="label-mono text-[10px] text-nyx-muted">
+                Já concluída — lançar direto no caixa da data selecionada
+              </span>
+            </label>
 
             {/* Items */}
             <div>
