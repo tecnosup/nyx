@@ -6,14 +6,17 @@ import {
   adminSetOrderStatus,
   adminUpdateOrder,
   adminCreateOrder,
+  adminGetOrder,
   adminGetPendingCaixaOrders,
   adminMarkOrdersInCaixa,
   adminUnmarkOrdersFromCaixa,
+  adminDeleteOrder,
   type Order,
   type OrderStatus,
   type OrderItem,
 } from "@/lib/admin-orders";
 import { adminCloseCaixa, adminReopenCaixa } from "@/lib/admin-caixa";
+import { adminAdjustStock } from "@/lib/admin-products";
 import type { PaymentMethod } from "@/lib/types";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -28,8 +31,25 @@ export async function setOrderStatusAction(
   status: OrderStatus
 ): Promise<ActionResult> {
   try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
-  await adminSetOrderStatus(id, status);
+
+  const order = await adminGetOrder(id);
+  if (!order) return { ok: false, error: "Pedido não encontrado." };
+
+  const stockItems = order.items.map((i) => ({ productId: i.productId, size: i.size }));
+
+  if (status === "completed" && order.status !== "completed" && !order.stockDeducted) {
+    await adminAdjustStock(stockItems, -1, { type: "venda", orderId: id });
+    await adminSetOrderStatus(id, status, { stockDeducted: true });
+  } else if (status === "cancelled" && order.status === "completed" && order.stockDeducted) {
+    await adminAdjustStock(stockItems, 1, { type: "devolucao", orderId: id });
+    await adminSetOrderStatus(id, status, { stockDeducted: false });
+  } else {
+    await adminSetOrderStatus(id, status);
+  }
+
   revalidate();
+  revalidatePath("/admin/produtos");
+  revalidatePath("/produtos");
   return { ok: true };
 }
 
@@ -75,7 +95,9 @@ export async function createManualOrderAction(data: {
   });
 
   if (data.createAsCompleted) {
-    await adminSetOrderStatus(id, "completed");
+    const stockItems = data.items.map((i) => ({ productId: i.productId, size: i.size }));
+    await adminAdjustStock(stockItems, -1, { type: "venda" });
+    await adminSetOrderStatus(id, "completed", { stockDeducted: true });
 
     // Auto-close into the caixa for that date (past or today)
     const totalPix = data.items.reduce((s, i) => s + i.pricePix, 0);
@@ -115,6 +137,55 @@ export async function closeCaixaAction(): Promise<ActionResult & { total?: numbe
 
   const groups = await adminCloseCaixa(orders);
 
+  for (const { caixaId, orderIds } of groups) {
+    await adminMarkOrdersInCaixa(orderIds, caixaId);
+  }
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin");
+
+  const total = orders.reduce((s, o) => s + o.totalPix, 0);
+  return { ok: true, total, count: orders.length };
+}
+
+function orderDateStr(o: Order): string {
+  if (o.saleDate) return o.saleDate;
+  return new Date(o.createdAt).toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).split("/").reverse().join("-");
+}
+
+export async function deleteOrderAction(orderId: string): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+
+  // Restore stock if this was a completed order with stock deducted
+  const order = await adminGetOrder(orderId);
+  if (order?.status === "completed" && order.stockDeducted) {
+    const stockItems = order.items.map((i) => ({ productId: i.productId, size: i.size }));
+    await adminAdjustStock(stockItems, 1, { type: "devolucao", orderId: orderId });
+  }
+
+  await adminDeleteOrder(orderId);
+  revalidate();
+  revalidatePath("/admin/financeiro");
+  revalidatePath("/admin/produtos");
+  revalidatePath("/produtos");
+  return { ok: true };
+}
+
+export async function closeCaixaForDateAction(
+  date: string
+): Promise<ActionResult & { total?: number; count?: number }> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+
+  const allPending = await adminGetPendingCaixaOrders();
+  const orders = allPending.filter((o) => orderDateStr(o) === date);
+
+  if (orders.length === 0) return { ok: false, error: "Nenhum pedido para esta data." };
+
+  const groups = await adminCloseCaixa(orders);
   for (const { caixaId, orderIds } of groups) {
     await adminMarkOrdersInCaixa(orderIds, caixaId);
   }

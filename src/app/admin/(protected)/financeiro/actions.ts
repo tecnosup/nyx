@@ -6,6 +6,9 @@ import {
   adminCreateGasto,
   adminUpdateGasto,
   adminDeleteGasto,
+  adminCreateGastoCategory,
+  adminUpdateGastoCategory,
+  adminDeleteGastoCategory,
   type GastoCategory,
   type GastoFrequency,
 } from "@/lib/admin-gastos";
@@ -43,6 +46,28 @@ export async function updateGastoAction(
 export async function deleteGastoAction(id: string): Promise<ActionResult> {
   try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
   await adminDeleteGasto(id);
+  revalidate();
+  return { ok: true };
+}
+
+export async function createGastoCategoryAction(name: string, color: string): Promise<ActionResult & { id?: string }> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+  if (!name.trim()) return { ok: false, error: "Nome obrigatório." };
+  const id = await adminCreateGastoCategory(name.trim(), color);
+  revalidate();
+  return { ok: true, id };
+}
+
+export async function updateGastoCategoryAction(id: string, updates: { name?: string; color?: string }): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+  await adminUpdateGastoCategory(id, updates);
+  revalidate();
+  return { ok: true };
+}
+
+export async function deleteGastoCategoryAction(id: string): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+  await adminDeleteGastoCategory(id);
   revalidate();
   return { ok: true };
 }

@@ -1,4 +1,4 @@
-import { adminListGastos, adminGastoStats } from "@/lib/admin-gastos";
+import { adminListGastos, adminGastoStats, adminListGastoCategories } from "@/lib/admin-gastos";
 import { adminListCaixas } from "@/lib/admin-caixa";
 import { adminOrderStats } from "@/lib/admin-orders";
 import { formatPrice } from "@/lib/utils";
@@ -23,11 +23,12 @@ const FREQUENCY_LABELS: Record<string, string> = {
 };
 
 export default async function FinanceiroPage() {
-  const [gastos, gastoStats, caixas, orderStats] = await Promise.all([
+  const [gastos, gastoStats, caixas, orderStats, gastoCategories] = await Promise.all([
     adminListGastos(),
     adminGastoStats(),
     adminListCaixas(30),
     adminOrderStats(),
+    adminListGastoCategories().catch(() => [] as Awaited<ReturnType<typeof adminListGastoCategories>>),
   ]);
 
   // Faturamento do mês atual (a partir dos caixas)
@@ -61,52 +62,56 @@ export default async function FinanceiroPage() {
           <p className="label-mono text-[10px] text-nyx-muted mb-4">Faturamento por fechamento de caixa</p>
           <DashboardChart caixas={caixas} gastos={gastos} />
         </div>
-        <FinanceiroCharts gastos={gastos} />
+        <FinanceiroCharts gastos={gastos} categories={gastoCategories} />
       </div>
 
       {/* Histórico de caixas */}
       <section className="mb-16">
-        <h2 className="heading-display text-xl mb-5">Fechamentos de caixa</h2>
-        {caixas.length === 0 ? (
-          <div className="border border-nyx-line p-8 text-center">
-            <p className="label-mono text-nyx-muted text-xs">Nenhum fechamento ainda.</p>
+        <div className="border border-nyx-line">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-nyx-line">
+            <h2 className="heading-display text-xl">Fechamentos de caixa</h2>
+            <span className="label-mono text-[9px] text-nyx-soft">{caixas.length} fechamento{caixas.length !== 1 ? "s" : ""}</span>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {caixas.map((c) => (
-              <div key={c.id} className="border border-nyx-line p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm items-center">
-                <div>
-                  <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Data</p>
-                  <p className="text-nyx-ink">{c.date.split("-").reverse().join("/")}</p>
+          {caixas.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="label-mono text-nyx-muted text-xs">Nenhum fechamento ainda.</p>
+            </div>
+          ) : (
+            <div className="max-h-[480px] overflow-y-auto scrollbar-thin divide-y divide-nyx-line">
+              {caixas.map((c) => (
+                <div key={c.id} className="px-5 py-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm items-center">
+                  <div>
+                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Data</p>
+                    <p className="text-nyx-ink">{c.date.split("-").reverse().join("/")}</p>
+                  </div>
+                  <div>
+                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pedidos</p>
+                    <p className="text-nyx-ink">{c.orderCount}</p>
+                  </div>
+                  <div>
+                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pix</p>
+                    <p className="text-nyx-ink">{formatPrice(c.totalPix)}</p>
+                  </div>
+                  <div>
+                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Cartão</p>
+                    <p className="text-nyx-ink">{formatPrice(c.totalCard)}</p>
+                  </div>
+                  <div>
+                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Total</p>
+                    <p className="text-nyx-ink font-medium">{formatPrice(c.totalGeral)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pedidos</p>
-                  <p className="text-nyx-ink">{c.orderCount}</p>
-                </div>
-                <div>
-                  <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pix</p>
-                  <p className="text-nyx-ink">{formatPrice(c.totalPix)}</p>
-                </div>
-                <div>
-                  <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Cartão</p>
-                  <p className="text-nyx-ink">{formatPrice(c.totalCard)}</p>
-                </div>
-                <div>
-                  <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Total</p>
-                  <p className="text-nyx-ink font-medium">{formatPrice(c.totalGeral)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Gastos */}
       <section>
-        <h2 className="heading-display text-xl mb-5">Gastos da empresa</h2>
         <GastosManager
           gastos={gastos}
-          categoryLabels={CATEGORY_LABELS}
+          categories={gastoCategories}
           frequencyLabels={FREQUENCY_LABELS}
         />
       </section>

@@ -31,6 +31,7 @@ export interface Order {
   notes?: string;
   caixaId?: string;
   saleDate?: string; // "YYYY-MM-DD" override for manual/historical orders
+  stockDeducted?: boolean; // true after stock was decremented on completion
   createdAt: number;
   updatedAt: number;
 }
@@ -55,15 +56,13 @@ function calcTotals(items: OrderItem[]) {
 
 export async function adminCreateOrder(input: CreateOrderInput): Promise<string> {
   const now = Date.now();
+  // Strip undefined fields — Firestore rejects them
+  const data = Object.fromEntries(
+    Object.entries({ ...input, ...calcTotals(input.items) }).filter(([, v]) => v !== undefined)
+  );
   const ref = await adminDb()
     .collection(COLLECTION)
-    .add({
-      ...input,
-      ...calcTotals(input.items),
-      status: "pending" as OrderStatus,
-      createdAt: now,
-      updatedAt: now,
-    });
+    .add({ ...data, status: "pending" as OrderStatus, createdAt: now, updatedAt: now });
   return ref.id;
 }
 
@@ -82,11 +81,15 @@ export async function adminGetOrder(id: string): Promise<Order | null> {
   return { id: doc.id, ...doc.data() } as Order;
 }
 
-export async function adminSetOrderStatus(id: string, status: OrderStatus): Promise<void> {
+export async function adminSetOrderStatus(
+  id: string,
+  status: OrderStatus,
+  extra?: { stockDeducted?: boolean }
+): Promise<void> {
   await adminDb()
     .collection(COLLECTION)
     .doc(id)
-    .update({ status, updatedAt: Date.now() });
+    .update({ status, ...extra, updatedAt: Date.now() });
 }
 
 export async function adminUpdateOrder(
@@ -143,6 +146,19 @@ export async function adminUnmarkOrdersFromCaixa(orderIds: string[]): Promise<vo
     });
   }
   await batch.commit();
+}
+
+export async function adminGetOrdersByCaixaId(caixaId: string): Promise<Order[]> {
+  const snap = await adminDb()
+    .collection(COLLECTION)
+    .where("caixaId", "==", caixaId)
+    .orderBy("createdAt", "asc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+}
+
+export async function adminDeleteOrder(orderId: string): Promise<void> {
+  await adminDb().collection(COLLECTION).doc(orderId).delete();
 }
 
 export async function adminOrderStats(): Promise<{

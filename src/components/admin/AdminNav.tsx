@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingBag, TrendingUp, Package,
-  Layers, Tag, ClipboardList, Settings, LogOut, MoreHorizontal,
+  Layers, Tag, Percent, ClipboardList, Star, LogOut,
 } from "lucide-react";
 import { AdminSignOut } from "@/app/admin/(protected)/AdminSignOut";
 
@@ -15,15 +15,15 @@ const NAV = [
   { href: "/admin/produtos", label: "Produtos", icon: Package },
   { href: "/admin/drops", label: "Drops", icon: Layers },
   { href: "/admin/categorias", label: "Categorias", icon: Tag },
-  { href: "/admin/cupons", label: "Cupons", icon: Tag },
+  { href: "/admin/cupons", label: "Cupons", icon: Percent },
   { href: "/admin/auditoria", label: "Auditoria", icon: ClipboardList },
-  { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
+  { href: "/admin/configuracoes", label: "Vitrine", icon: Star },
 ];
 
 // Bottom nav shows only top 4 items
 const BOTTOM_NAV = NAV.slice(0, 4);
 
-export function AdminSidebar() {
+export function AdminSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
   const pathname = usePathname();
 
   function isActive(href: string, exact?: boolean) {
@@ -32,7 +32,7 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="hidden md:flex flex-col w-56 shrink-0 min-h-screen bg-nyx-bg border-r border-nyx-line">
+    <aside className="hidden md:flex flex-col w-56 shrink-0 fixed left-0 top-0 h-screen bg-nyx-bg border-r border-nyx-line z-30">
       <div className="h-16 flex items-center px-5 border-b border-nyx-line shrink-0">
         <Link href="/admin" className="heading-display text-lg tracking-tight">
           NYX<span className="text-nyx-muted">.admin</span>
@@ -43,11 +43,12 @@ export function AdminSidebar() {
         {NAV.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href, item.exact);
+          const showBadge = item.href === "/admin/pedidos" && pendingCount > 0;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 text-sm transition-colors rounded-sm ${
+              className={`relative flex items-center gap-3 px-3 py-2.5 text-sm transition-colors rounded-sm ${
                 active
                   ? "bg-nyx-cream text-nyx-ink"
                   : "text-nyx-muted hover:text-nyx-ink hover:bg-nyx-cream/40"
@@ -55,6 +56,11 @@ export function AdminSidebar() {
             >
               <Icon size={16} strokeWidth={1.5} />
               <span className="label-mono text-[11px] tracking-wider">{item.label}</span>
+              {showBadge && (
+                <span className="ml-auto bg-amber-500 text-white text-[9px] font-bold min-w-[16px] h-4 rounded-full flex items-center justify-center px-1">
+                  {pendingCount}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -67,7 +73,7 @@ export function AdminSidebar() {
   );
 }
 
-export function AdminBottomNav() {
+export function AdminBottomNav({ pendingCount = 0 }: { pendingCount?: number }) {
   const pathname = usePathname();
 
   function isActive(href: string, exact?: boolean) {
@@ -80,15 +86,23 @@ export function AdminBottomNav() {
       {BOTTOM_NAV.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.href, item.exact);
+        const showBadge = item.href === "/admin/pedidos" && pendingCount > 0;
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
+            className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors relative ${
               active ? "text-nyx-ink" : "text-nyx-soft"
             }`}
           >
-            <Icon size={20} strokeWidth={1.5} />
+            <span className="relative">
+              <Icon size={20} strokeWidth={1.5} />
+              {showBadge && (
+                <span className="absolute -top-1 -right-2 bg-amber-500 text-white text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">
+                  {pendingCount}
+                </span>
+              )}
+            </span>
             <span className="label-mono text-[9px] tracking-wider">{item.label}</span>
           </Link>
         );
@@ -99,8 +113,8 @@ export function AdminBottomNav() {
           pathname.startsWith("/admin/configuracoes") ? "text-nyx-ink" : "text-nyx-soft"
         }`}
       >
-        <MoreHorizontal size={20} strokeWidth={1.5} />
-        <span className="label-mono text-[9px] tracking-wider">Mais</span>
+        <Star size={20} strokeWidth={1.5} />
+        <span className="label-mono text-[9px] tracking-wider">Vitrine</span>
       </Link>
     </nav>
   );

@@ -39,6 +39,7 @@ function effectivePrice(pricePix: number, priceCard: number, method: PaymentMeth
 export interface OrderMessagePayload {
   product: Pick<Product, "slug" | "name" | "pricePix" | "priceCard">;
   size: ProductSize;
+  color?: string;
   shipping: ShippingAddress;
   paymentMethod: PaymentMethod;
   notes?: string;
@@ -46,7 +47,7 @@ export interface OrderMessagePayload {
 }
 
 export function buildOrderMessage(payload: OrderMessagePayload): string {
-  const { product, size, shipping, paymentMethod, notes, coupon } = payload;
+  const { product, size, color, shipping, paymentMethod, notes, coupon } = payload;
   const basePrice = effectivePrice(product.pricePix, product.priceCard, paymentMethod);
   const finalPrice = applyDiscount(basePrice, coupon);
   const complement = shipping.complement?.trim();
@@ -56,6 +57,7 @@ export function buildOrderMessage(payload: OrderMessagePayload): string {
     "*Peça*",
     product.name,
     `Tamanho: ${size}`,
+    ...(color ? [`Cor: ${color}`] : []),
     `Pix: ${formatPrice(product.pricePix)} · Cartão: ${formatPrice(product.priceCard)}`,
     `Forma escolhida: ${PAYMENT_LABELS[paymentMethod]} → ${formatPrice(basePrice)}`,
   ];

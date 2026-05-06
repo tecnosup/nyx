@@ -46,20 +46,26 @@ export default async function PedidosPage() {
         <Kpi label="Aguardando fechamento de caixa" value={String(pendingCaixa)} highlight={pendingCaixa > 0} />
       </div>
 
-      {orders.length === 0 ? (
-        <div className="border border-nyx-line p-12 text-center mb-12">
-          <p className="label-mono text-nyx-muted">Nenhum pedido ainda.</p>
-          <p className="text-xs text-nyx-soft mt-1">
-            Os pedidos aparecem aqui assim que um cliente finaliza o checkout ou você registra uma venda manual.
-          </p>
+      <div className="border border-nyx-line mb-16">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-nyx-line">
+          <p className="label-mono text-sm text-nyx-ink">Últimos pedidos</p>
+          <span className="label-mono text-[9px] text-nyx-soft">{orders.length} pedido{orders.length !== 1 ? "s" : ""}</span>
         </div>
-      ) : (
-        <div className="mb-16">
-          <OrdersTable orders={orders} products={products} />
-        </div>
-      )}
+        {orders.length === 0 ? (
+          <div className="p-12 text-center">
+            <p className="label-mono text-nyx-muted">Nenhum pedido ainda.</p>
+            <p className="text-xs text-nyx-soft mt-1">
+              Os pedidos aparecem aqui assim que um cliente finaliza o checkout ou você registra uma venda manual.
+            </p>
+          </div>
+        ) : (
+          <div className="max-h-[420px] overflow-y-auto scrollbar-thin">
+            <OrdersTable orders={orders} products={products} />
+          </div>
+        )}
+      </div>
 
-      <CaixaSection caixas={caixas} pendingCount={pendingCaixa} openOrders={openCaixaOrders} />
+      <CaixaSection caixas={caixas} pendingCount={pendingCaixa} openOrders={openCaixaOrders} products={products} />
     </div>
   );
 }

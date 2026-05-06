@@ -69,7 +69,7 @@ export function DashboardChart({ caixas, gastos }: Props) {
   return (
     <div>
       {/* Summary */}
-      <div className="mb-4 flex items-end justify-between gap-4">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
         <div>
           <p className="label-mono text-[9px] text-nyx-muted mb-1">Receita acumulada</p>
           <p className="heading-display text-2xl md:text-3xl text-nyx-ink">
@@ -83,7 +83,7 @@ export function DashboardChart({ caixas, gastos }: Props) {
           )}
         </div>
         {monthlyExpenses > 0 && (
-          <div className="text-right shrink-0">
+          <div className="sm:text-right shrink-0">
             <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Gastos/mês</p>
             <p className="text-sm text-nyx-soft">{fmtFull(monthlyExpenses)}</p>
           </div>

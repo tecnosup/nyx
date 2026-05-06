@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useActionState } from "react";
 import Image from "next/image";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { setFeaturedProductAction } from "@/app/admin/(protected)/configuracoes/actions";
 import { formatPrice } from "@/lib/utils";
 import { CATEGORY_LABELS } from "@/lib/types";
@@ -27,51 +27,130 @@ export function FeaturedProductForm({ products, currentId }: Props) {
   const [state, action, pending] = useActionState(setFeaturedProductAction, {});
 
   const selectedProduct = products.find((p) => p.id === selected) ?? null;
+  const isDirty = selected !== (currentId ?? "");
 
   return (
-    <form action={action} className="flex flex-col gap-6">
+    <form action={action} className="space-y-6">
       <input type="hidden" name="productId" value={selected} />
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <PickerCard selected={selected === ""} onClick={() => setSelected("")}>
-          <div className="aspect-[4/5] bg-nyx-line/20 flex items-center justify-center mb-3">
-            <span className="label-mono text-[10px] text-nyx-muted">AUTO</span>
+      {/* Current selection card */}
+      <div className={`border p-5 transition-colors ${isDirty ? "border-nyx-muted" : "border-nyx-line"}`}>
+        <p className="label-mono text-[9px] text-nyx-muted mb-4 tracking-widest">
+          {isDirty ? "NOVA SELEÇÃO" : "EM DESTAQUE AGORA"}
+        </p>
+
+        {selectedProduct ? (
+          <div className="flex items-center gap-5">
+            <div className="relative w-16 h-20 shrink-0 bg-nyx-line/20 overflow-hidden">
+              {selectedProduct.images[0] ? (
+                <Image
+                  src={selectedProduct.images[0]}
+                  alt={selectedProduct.name}
+                  fill
+                  sizes="64px"
+                  className="object-contain p-1.5"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="label-mono text-[9px] text-nyx-soft">Sem foto</span>
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="heading-display text-lg text-nyx-ink leading-tight truncate">
+                {selectedProduct.name}
+              </p>
+              <p className="label-mono text-[9px] text-nyx-muted mt-1">
+                {CATEGORY_LABELS[selectedProduct.category] ?? selectedProduct.category}
+              </p>
+              <p className="text-sm text-nyx-ink mt-2">
+                {formatPrice(selectedProduct.pricePix)}
+                {selectedProduct.priceCard > 0 && (
+                  <span className="text-nyx-muted text-xs ml-2">· {formatPrice(selectedProduct.priceCard)} cartão</span>
+                )}
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-nyx-ink">Automático</p>
-          <p className="label-mono text-[10px] text-nyx-muted mt-0.5">Mais recente</p>
+        ) : (
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-20 shrink-0 border border-nyx-line/50 flex items-center justify-center">
+              <Sparkles size={16} className="text-nyx-muted" />
+            </div>
+            <div>
+              <p className="heading-display text-lg text-nyx-ink">Automático</p>
+              <p className="text-xs text-nyx-muted mt-1">
+                O produto publicado mais recente aparece no hero da página inicial.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-nyx-line" />
+        <p className="label-mono text-[9px] text-nyx-soft">selecione uma peça</p>
+        <div className="flex-1 h-px bg-nyx-line" />
+      </div>
+
+      {/* Picker grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Auto option */}
+        <PickerCard selected={selected === ""} onClick={() => setSelected("")}>
+          <div className="aspect-[4/5] flex items-center justify-center mb-2">
+            <Sparkles size={18} className={selected === "" ? "text-nyx-bg" : "text-nyx-muted"} />
+          </div>
+          <p className={`text-[11px] font-medium truncate ${selected === "" ? "text-nyx-bg" : "text-nyx-ink"}`}>
+            Automático
+          </p>
+          <p className={`label-mono text-[9px] mt-0.5 ${selected === "" ? "text-nyx-bg/70" : "text-nyx-soft"}`}>
+            Mais recente
+          </p>
         </PickerCard>
 
         {products.map((p) => (
           <PickerCard key={p.id} selected={selected === p.id} onClick={() => setSelected(p.id)}>
-            <div className="relative aspect-[4/5] bg-nyx-line/20 mb-3 overflow-hidden">
+            <div className="relative aspect-[4/5] mb-2 overflow-hidden">
               {p.images[0] ? (
                 <Image
                   src={p.images[0]}
                   alt={p.name}
                   fill
-                  sizes="200px"
-                  className="object-contain p-2"
+                  sizes="140px"
+                  className="object-contain p-1"
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="label-mono text-[10px] text-nyx-muted">Sem foto</span>
+                  <span className={`label-mono text-[9px] ${selected === p.id ? "text-nyx-bg/60" : "text-nyx-soft"}`}>
+                    Sem foto
+                  </span>
                 </div>
               )}
             </div>
-            <p className="text-xs text-nyx-ink leading-tight line-clamp-2">{p.name}</p>
-            <p className="label-mono text-[10px] text-nyx-muted mt-0.5">
+            <p className={`text-[11px] font-medium leading-tight line-clamp-2 ${selected === p.id ? "text-nyx-bg" : "text-nyx-ink"}`}>
+              {p.name}
+            </p>
+            <p className={`label-mono text-[9px] mt-0.5 ${selected === p.id ? "text-nyx-bg/70" : "text-nyx-muted"}`}>
               {formatPrice(p.pricePix)}
             </p>
           </PickerCard>
         ))}
       </div>
 
-      <HeroPreview product={selectedProduct} />
-
+      {/* Error */}
       {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
 
-      <button type="submit" disabled={pending} className="btn-primary self-start">
-        {pending ? "Salvando…" : "Salvar alterações"}
+      {/* Save */}
+      <button
+        type="submit"
+        disabled={pending || !isDirty}
+        className={`w-full label-mono text-xs py-3 transition-colors ${
+          isDirty && !pending
+            ? "bg-nyx-ink text-nyx-bg hover:bg-nyx-muted"
+            : "border border-nyx-line text-nyx-soft cursor-not-allowed"
+        } disabled:opacity-50`}
+      >
+        {pending ? "Salvando…" : isDirty ? "Salvar alterações" : "Nenhuma alteração"}
       </button>
     </form>
   );
@@ -90,64 +169,18 @@ function PickerCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative p-3 border text-left transition-colors ${
+      className={`relative p-2.5 border text-left transition-all duration-200 ${
         selected
-          ? "border-nyx-ink bg-nyx-ink/5"
-          : "border-nyx-line hover:border-nyx-soft"
+          ? "border-nyx-ink bg-nyx-ink"
+          : "border-nyx-line hover:border-nyx-muted"
       }`}
     >
       {selected && (
-        <span className="absolute top-2 right-2 w-4 h-4 bg-nyx-ink flex items-center justify-center">
-          <Check size={10} className="text-nyx-bg" />
+        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-nyx-bg flex items-center justify-center">
+          <Check size={9} className="text-nyx-ink" />
         </span>
       )}
       {children}
     </button>
-  );
-}
-
-function HeroPreview({ product }: { product: ProductSummary | null }) {
-  return (
-    <div className="border border-nyx-line">
-      <div className="px-4 pt-3 pb-2 border-b border-nyx-line">
-        <p className="label-mono text-[10px] text-nyx-muted">Preview — Hero da página inicial</p>
-      </div>
-      <div className="p-4">
-        {product ? (
-          <div className="flex items-center gap-4">
-            <div className="relative w-16 h-20 flex-shrink-0 bg-nyx-line/20 overflow-hidden">
-              {product.images[0] && (
-                <Image
-                  src={product.images[0]}
-                  alt={product.name}
-                  fill
-                  sizes="64px"
-                  className="object-contain p-1"
-                />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="font-serif italic text-sm text-nyx-ink truncate">{product.name}</p>
-              <p className="label-mono text-[10px] text-nyx-muted mt-1">
-                {CATEGORY_LABELS[product.category] ?? product.category}
-              </p>
-              <div className="flex gap-3 mt-2">
-                <span className="label-mono text-[10px] text-nyx-ink">
-                  Pix {formatPrice(product.pricePix)}
-                </span>
-                <span className="label-mono text-[10px] text-nyx-muted">·</span>
-                <span className="label-mono text-[10px] text-nyx-ink">
-                  Cartão {formatPrice(product.priceCard)}
-                </span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p className="label-mono text-[10px] text-nyx-muted text-center py-4">
-            O produto publicado mais recente será exibido automaticamente
-          </p>
-        )}
-      </div>
-    </div>
   );
 }

@@ -1,17 +1,9 @@
 "use client";
 
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts";
-import type { Gasto } from "@/lib/admin-gastos";
+import type { Gasto, GastoCategoryItem } from "@/lib/admin-gastos";
 
-const COLORS = ["#ede8d8", "#8c8578", "#5c5a4f", "#2a2820", "#6e6a5e"];
-
-const CATEGORY_LABELS: Record<string, string> = {
-  aluguel: "Aluguel",
-  insumos: "Insumos",
-  marketing: "Marketing",
-  logistica: "Logística",
-  outros: "Outros",
-};
+const FALLBACK_COLORS = ["#ede8d8", "#8c8578", "#5c5a4f", "#2a2820", "#6e6a5e"];
 
 function fmt(val: number) {
   return `R$ ${val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -19,9 +11,12 @@ function fmt(val: number) {
 
 interface Props {
   gastos: Gasto[];
+  categories: GastoCategoryItem[];
 }
 
-export function FinanceiroCharts({ gastos }: Props) {
+export function FinanceiroCharts({ gastos, categories = [] }: Props) {
+  const catMap = Object.fromEntries(categories.map((c) => [c.id, c]));
+
   const gastosByCategory = gastos
     .filter((g) => g.active)
     .reduce<Record<string, number>>((acc, g) => {
@@ -29,9 +24,10 @@ export function FinanceiroCharts({ gastos }: Props) {
       return acc;
     }, {});
 
-  const pieData = Object.entries(gastosByCategory).map(([key, value]) => ({
-    name: CATEGORY_LABELS[key] ?? key,
+  const pieData = Object.entries(gastosByCategory).map(([key, value], i) => ({
+    name: catMap[key]?.name ?? key,
     value,
+    color: catMap[key]?.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length],
   }));
 
   return (
@@ -54,8 +50,8 @@ export function FinanceiroCharts({ gastos }: Props) {
               dataKey="value"
               labelLine={false}
             >
-              {pieData.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              {pieData.map((entry, i) => (
+                <Cell key={i} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip

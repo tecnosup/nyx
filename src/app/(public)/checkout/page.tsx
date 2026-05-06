@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ slug?: string; size?: string }>;
+  searchParams: Promise<{ slug?: string; size?: string; color?: string }>;
 }
 
 function isProductSize(v: string): v is ProductSize {
@@ -23,7 +23,7 @@ function isProductSize(v: string): v is ProductSize {
 }
 
 export default async function CheckoutPage({ searchParams }: PageProps) {
-  const { slug, size } = await searchParams;
+  const { slug, size, color } = await searchParams;
   if (!slug || !size) redirect("/produtos");
   if (!isProductSize(size)) redirect("/produtos");
 
@@ -66,6 +66,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
                 priceCard: product.priceCard,
               }}
               size={size}
+              color={color}
             />
           </div>
 

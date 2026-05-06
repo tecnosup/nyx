@@ -6,7 +6,7 @@ import { formatPrice } from "@/lib/utils";
 import { createManualOrderAction } from "@/app/admin/(protected)/pedidos/actions";
 import type { OrderItem } from "@/lib/admin-orders";
 import type { PaymentMethod, Product } from "@/lib/types";
-import { PAYMENT_LABELS } from "@/lib/types";
+import { PAYMENT_LABELS, SIZE_LABELS } from "@/lib/types";
 
 const ALL_SIZES = ["PP", "P", "M", "G", "GG", "UNICO"];
 const PAYMENT_OPTIONS: PaymentMethod[] = ["pix", "cartao", "transferencia", "combinar"];
@@ -44,14 +44,15 @@ function todayISO() {
   }).split("/").reverse().join("-");
 }
 
-function QuickSaleModal({ onClose, products }: { onClose: () => void; products: Product[] }) {
+export function QuickSaleModal({ onClose, products, initialDate }: { onClose: () => void; products: Product[]; initialDate?: string }) {
+  const defaultDate = initialDate ?? todayISO();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [payment, setPayment] = useState<PaymentMethod>("pix");
   const [notes, setNotes] = useState("");
-  const [saleDate, setSaleDate] = useState(todayISO());
-  const [alreadyDone, setAlreadyDone] = useState(false);
+  const [saleDate, setSaleDate] = useState(defaultDate);
+  const [alreadyDone, setAlreadyDone] = useState(defaultDate < todayISO());
   const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -227,7 +228,7 @@ function QuickSaleModal({ onClose, products }: { onClose: () => void; products: 
                             value={item.size}
                             onChange={(e) => updateItem(i, { size: e.target.value })}
                           >
-                            {availableSizes.map((s) => <option key={s}>{s}</option>)}
+                            {availableSizes.map((s) => <option key={s} value={s}>{SIZE_LABELS[s as keyof typeof SIZE_LABELS] ?? s}</option>)}
                           </select>
                         </div>
                         <div>

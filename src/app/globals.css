@@ -96,6 +96,24 @@
   }
 }
 
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2820 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #2a2820;
+  border-radius: 99px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #5c5a4f;
+}
+
 @keyframes floaty {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-14px); }

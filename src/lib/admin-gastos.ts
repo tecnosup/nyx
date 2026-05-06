@@ -2,9 +2,56 @@ import "server-only";
 import { adminDb } from "./firebase-admin";
 
 const COLLECTION = "gastos";
+const CAT_COLLECTION = "gastoCategories";
 
-export type GastoCategory = "aluguel" | "insumos" | "marketing" | "logistica" | "outros";
+export type GastoCategory = string;
 export type GastoFrequency = "mensal" | "semanal" | "avulso";
+
+export interface GastoCategoryItem {
+  id: string;
+  name: string;
+  color: string; // hex
+  createdAt: number;
+}
+
+const DEFAULT_CATEGORIES: Omit<GastoCategoryItem, "createdAt">[] = [
+  { id: "aluguel",   name: "Aluguel",            color: "#F59E0B" },
+  { id: "insumos",   name: "Insumos / Produtos",  color: "#3B82F6" },
+  { id: "marketing", name: "Marketing",           color: "#8B5CF6" },
+  { id: "logistica", name: "Logística",           color: "#06B6D4" },
+  { id: "outros",    name: "Outros",              color: "#6B7280" },
+];
+
+export async function adminListGastoCategories(): Promise<GastoCategoryItem[]> {
+  const db = adminDb();
+  const snap = await db.collection(CAT_COLLECTION).get();
+  if (!snap.empty) {
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as GastoCategoryItem)
+      .sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+  }
+  // Seed defaults on first call
+  const now = Date.now();
+  const batch = db.batch();
+  for (const cat of DEFAULT_CATEGORIES) {
+    batch.set(db.collection(CAT_COLLECTION).doc(cat.id), { name: cat.name, color: cat.color, createdAt: now });
+  }
+  await batch.commit();
+  return DEFAULT_CATEGORIES.map((c) => ({ ...c, createdAt: now }));
+}
+
+export async function adminCreateGastoCategory(name: string, color: string): Promise<string> {
+  const ref = await adminDb().collection(CAT_COLLECTION).add({ name, color, createdAt: Date.now() });
+  return ref.id;
+}
+
+export async function adminUpdateGastoCategory(id: string, updates: Partial<Pick<GastoCategoryItem, "name" | "color">>): Promise<void> {
+  await adminDb().collection(CAT_COLLECTION).doc(id).update(updates);
+}
+
+export async function adminDeleteGastoCategory(id: string): Promise<void> {
+  await adminDb().collection(CAT_COLLECTION).doc(id).delete();
+}
 
 export interface Gasto {
   id: string;

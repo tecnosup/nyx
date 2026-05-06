@@ -7,11 +7,12 @@ import { adminListCaixas } from "@/lib/admin-caixa";
 import { adminGastoStats, adminListGastos } from "@/lib/admin-gastos";
 import { formatPrice } from "@/lib/utils";
 import {
-  ShoppingBag, TrendingUp, Package, AlertTriangle,
-  ArrowRight, Clock, CheckCheck, XCircle, MessageCircle,
+  AlertTriangle, ArrowRight, Clock, CheckCheck, XCircle, MessageCircle,
 } from "lucide-react";
 import { QuickSaleButton } from "@/components/admin/QuickSaleButton";
 import { DashboardChart } from "@/components/admin/DashboardChart";
+import { SitePreviewCard } from "@/components/admin/SitePreviewCard";
+import { SITE_CONFIG } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,10 @@ export default async function AdminDashboardPage() {
   const lucro = revenueThisMonth - gastoStats.monthlyTotal;
 
   const pendingOrders = recentOrders.filter((o) => o.status === "pending");
+
+  const publishedProducts = products.filter((p) => p.status === "published").length;
+  const lowStockProducts = products.filter((p) => totalStock(p) === 1).length;
+  const outOfStockProducts = products.filter((p) => totalStock(p) === 0).length;
 
   return (
     <div className="container-nyx py-6 md:py-10 space-y-6">
@@ -128,13 +133,13 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* ── Chart + Pedidos recentes ── */}
-      <div className="grid lg:grid-cols-[1fr_360px] gap-4">
+      <div className="grid lg:grid-cols-[1fr_360px] gap-4 min-w-0">
 
         {/* Gráfico de faturamento */}
-        <div className="border border-nyx-line p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="label-mono text-[10px] text-nyx-muted">Faturamento por caixa (últimos 30 dias)</p>
-            <Link href="/admin/financeiro" className="label-mono text-[9px] text-nyx-soft hover:text-nyx-ink transition-colors inline-flex items-center gap-1">
+        <div className="border border-nyx-line p-5 overflow-hidden min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <p className="label-mono text-[10px] text-nyx-muted truncate">Faturamento por caixa (últimos 30 dias)</p>
+            <Link href="/admin/financeiro" className="label-mono text-[9px] text-nyx-soft hover:text-nyx-ink transition-colors inline-flex items-center gap-1 shrink-0">
               Ver tudo <ArrowRight size={10} />
             </Link>
           </div>
@@ -142,10 +147,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Pedidos recentes */}
-        <div className="border border-nyx-line p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="label-mono text-[10px] text-nyx-muted">Pedidos recentes</p>
-            <Link href="/admin/pedidos" className="label-mono text-[9px] text-nyx-soft hover:text-nyx-ink transition-colors inline-flex items-center gap-1">
+        <div className="border border-nyx-line p-5 flex flex-col md:h-[420px] overflow-hidden min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <p className="label-mono text-[10px] text-nyx-muted shrink-0">Pedidos recentes</p>
+            <Link href="/admin/pedidos" className="label-mono text-[9px] text-nyx-soft hover:text-nyx-ink transition-colors inline-flex items-center gap-1 shrink-0">
               Ver todos <ArrowRight size={10} />
             </Link>
           </div>
@@ -155,8 +160,8 @@ export default async function AdminDashboardPage() {
               <p className="text-xs text-nyx-soft">Nenhum pedido ainda.</p>
             </div>
           ) : (
-            <div className="space-y-px">
-              {recentOrders.slice(0, 7).map((order) => {
+            <div className="overflow-y-auto flex-1 scrollbar-thin space-y-px pr-3">
+              {recentOrders.map((order) => {
                 const d = new Date(order.createdAt);
                 const dt = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
                 const hr = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -183,11 +188,63 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ── Atalhos rápidos ── */}
-      <div className="grid grid-cols-3 gap-3">
-        <ShortcutCard href="/admin/pedidos" icon={<ShoppingBag size={16} strokeWidth={1.5} />} label="Pedidos" badge={orderStats.pending > 0 ? orderStats.pending : undefined} />
-        <ShortcutCard href="/admin/financeiro" icon={<TrendingUp size={16} strokeWidth={1.5} />} label="Financeiro" />
-        <ShortcutCard href="/admin/produtos" icon={<Package size={16} strokeWidth={1.5} />} label="Produtos" />
+      {/* ── Produtos + Preview do site ── */}
+      <div className="grid lg:grid-cols-[1fr_360px] gap-4">
+
+        {/* Card de Produtos */}
+        <Link href="/admin/produtos" className="border border-nyx-line p-5 hover:bg-nyx-cream/10 transition-colors group flex flex-col">
+          <div className="flex items-center justify-between mb-4 shrink-0">
+            <p className="label-mono text-[10px] text-nyx-muted">Produtos</p>
+            <span className="label-mono text-[9px] text-nyx-soft group-hover:text-nyx-ink transition-colors inline-flex items-center gap-1">
+              Ver todos <ArrowRight size={10} />
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-4 shrink-0">
+            <div>
+              <p className="heading-display text-2xl text-nyx-ink">{publishedProducts}</p>
+              <p className="text-[10px] text-nyx-muted mt-1 label-mono">Publicados</p>
+            </div>
+            <div>
+              <p className={`heading-display text-2xl ${lowStockProducts > 0 ? "text-amber-400" : "text-nyx-ink"}`}>{lowStockProducts}</p>
+              <p className="text-[10px] text-nyx-muted mt-1 label-mono">Estoque baixo</p>
+            </div>
+            <div>
+              <p className={`heading-display text-2xl ${outOfStockProducts > 0 ? "text-red-400" : "text-nyx-ink"}`}>{outOfStockProducts}</p>
+              <p className="text-[10px] text-nyx-muted mt-1 label-mono">Esgotados</p>
+            </div>
+          </div>
+          <div className="border-t border-nyx-line pt-3 flex flex-col flex-1 overflow-hidden">
+            <p className="label-mono text-[9px] text-nyx-soft mb-2 shrink-0">Últimos cadastrados</p>
+            <div className="overflow-y-auto flex-1 scrollbar-thin pr-3">
+              {[...products].sort((a, b) => b.createdAt - a.createdAt).map((p) => (
+                <div key={p.id} className="flex items-center justify-between py-1.5 border-b border-nyx-line/40 last:border-0">
+                  <div className="min-w-0">
+                    <p className="text-xs text-nyx-ink truncate">{p.name}</p>
+                  </div>
+                  <div className="shrink-0 ml-3">
+                    {(() => {
+                      const stock = totalStock(p);
+                      const cls = stock === 0
+                        ? "border-red-500/50 text-red-400"
+                        : stock === 1
+                        ? "border-amber-400/50 text-amber-400"
+                        : "border-emerald-500/40 text-emerald-400";
+                      return (
+                        <span className={`label-mono text-[8px] px-1.5 py-0.5 border ${cls}`}>
+                          {stock} un.
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Link>
+
+        {/* Preview do site */}
+        <SitePreviewCard siteUrl={SITE_CONFIG.url} />
+
       </div>
 
     </div>
@@ -216,18 +273,3 @@ function KpiCard({ label, value, sub, accent }: {
   );
 }
 
-function ShortcutCard({ href, icon, label, badge }: {
-  href: string; icon: React.ReactNode; label: string; badge?: number;
-}) {
-  return (
-    <Link href={href} className="border border-nyx-line p-4 hover:bg-nyx-cream/30 transition-colors flex flex-col items-center gap-2 relative group">
-      {badge !== undefined && (
-        <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-          {badge}
-        </span>
-      )}
-      <span className="text-nyx-muted group-hover:text-nyx-ink transition-colors">{icon}</span>
-      <span className="label-mono text-[9px] text-nyx-muted group-hover:text-nyx-ink transition-colors">{label}</span>
-    </Link>
-  );
-}
