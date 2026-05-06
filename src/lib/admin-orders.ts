@@ -4,8 +4,8 @@ import type { PaymentMethod, ShippingAddress } from "./types";
 
 const COLLECTION = "orders";
 
-export type OrderStatus = "pending" | "confirmed" | "cancelled";
-export type OrderType = "single" | "cart" | "backorder";
+export type OrderStatus = "pending" | "confirmed" | "completed" | "cancelled";
+export type OrderType = "single" | "cart" | "backorder" | "manual";
 
 export interface OrderItem {
   productId: string;
@@ -23,12 +23,15 @@ export interface Order {
   status: OrderStatus;
   customerName: string;
   customerPhone: string;
-  shipping: ShippingAddress;
+  shipping?: ShippingAddress;
   paymentMethod: PaymentMethod;
   items: OrderItem[];
   totalPix: number;
   totalCard: number;
   notes?: string;
+  caixaId?: string;
+  saleDate?: string; // "YYYY-MM-DD" override for manual/historical orders
+  stockDeducted?: boolean; // true after stock was decremented on completion
   createdAt: number;
   updatedAt: number;
 }
@@ -37,10 +40,11 @@ export interface CreateOrderInput {
   type: OrderType;
   customerName: string;
   customerPhone: string;
-  shipping: ShippingAddress;
+  shipping?: ShippingAddress;
   paymentMethod: PaymentMethod;
   items: OrderItem[];
   notes?: string;
+  saleDate?: string;
 }
 
 function calcTotals(items: OrderItem[]) {
@@ -52,15 +56,13 @@ function calcTotals(items: OrderItem[]) {
 
 export async function adminCreateOrder(input: CreateOrderInput): Promise<string> {
   const now = Date.now();
+  // Strip undefined fields — Firestore rejects them
+  const data = Object.fromEntries(
+    Object.entries({ ...input, ...calcTotals(input.items) }).filter(([, v]) => v !== undefined)
+  );
   const ref = await adminDb()
     .collection(COLLECTION)
-    .add({
-      ...input,
-      ...calcTotals(input.items),
-      status: "pending" as OrderStatus,
-      createdAt: now,
-      updatedAt: now,
-    });
+    .add({ ...data, status: "pending" as OrderStatus, createdAt: now, updatedAt: now });
   return ref.id;
 }
 
@@ -79,11 +81,84 @@ export async function adminGetOrder(id: string): Promise<Order | null> {
   return { id: doc.id, ...doc.data() } as Order;
 }
 
-export async function adminSetOrderStatus(id: string, status: OrderStatus): Promise<void> {
+export async function adminSetOrderStatus(
+  id: string,
+  status: OrderStatus,
+  extra?: { stockDeducted?: boolean }
+): Promise<void> {
   await adminDb()
     .collection(COLLECTION)
     .doc(id)
-    .update({ status, updatedAt: Date.now() });
+    .update({ status, ...extra, updatedAt: Date.now() });
+}
+
+export async function adminUpdateOrder(
+  id: string,
+  updates: Partial<Pick<Order, "customerName" | "customerPhone" | "paymentMethod" | "notes" | "items">>
+): Promise<void> {
+  const data: Record<string, unknown> = { ...updates, updatedAt: Date.now() };
+  if (updates.items) {
+    const totals = calcTotals(updates.items);
+    data.totalPix = totals.totalPix;
+    data.totalCard = totals.totalCard;
+  }
+  await adminDb().collection(COLLECTION).doc(id).update(data);
+}
+
+export async function adminGetPendingCaixaOrders(): Promise<Order[]> {
+  const snap = await adminDb()
+    .collection(COLLECTION)
+    .where("status", "==", "completed")
+    .where("caixaId", "==", null)
+    .get();
+
+  if (snap.empty) {
+    // Firestore doesn't match missing fields with == null in all SDKs; fallback
+    const all = await adminDb()
+      .collection(COLLECTION)
+      .where("status", "==", "completed")
+      .get();
+    return all.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Order)
+      .filter((o) => !o.caixaId);
+  }
+
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+}
+
+export async function adminMarkOrdersInCaixa(orderIds: string[], caixaId: string): Promise<void> {
+  const db = adminDb();
+  const batch = db.batch();
+  for (const id of orderIds) {
+    batch.update(db.collection(COLLECTION).doc(id), { caixaId, updatedAt: Date.now() });
+  }
+  await batch.commit();
+}
+
+export async function adminUnmarkOrdersFromCaixa(orderIds: string[]): Promise<void> {
+  const db = adminDb();
+  const { FieldValue } = await import("firebase-admin/firestore");
+  const batch = db.batch();
+  for (const id of orderIds) {
+    batch.update(db.collection(COLLECTION).doc(id), {
+      caixaId: FieldValue.delete(),
+      updatedAt: Date.now(),
+    });
+  }
+  await batch.commit();
+}
+
+export async function adminGetOrdersByCaixaId(caixaId: string): Promise<Order[]> {
+  const snap = await adminDb()
+    .collection(COLLECTION)
+    .where("caixaId", "==", caixaId)
+    .orderBy("createdAt", "asc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+}
+
+export async function adminDeleteOrder(orderId: string): Promise<void> {
+  await adminDb().collection(COLLECTION).doc(orderId).delete();
 }
 
 export async function adminOrderStats(): Promise<{
@@ -107,7 +182,7 @@ export async function adminOrderStats(): Promise<{
   let thisMonth = 0;
 
   for (const o of orders) {
-    if (o.status === "confirmed") {
+    if (o.status === "confirmed" || o.status === "completed") {
       totalConfirmed++;
       revenuePix += o.totalPix;
       revenueCard += o.totalCard;

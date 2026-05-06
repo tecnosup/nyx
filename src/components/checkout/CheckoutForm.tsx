@@ -32,6 +32,7 @@ interface Props {
     priceCard: number;
   };
   size: ProductSize;
+  color?: string;
 }
 
 const PAYMENT_OPTIONS: PaymentMethod[] = [
@@ -41,7 +42,7 @@ const PAYMENT_OPTIONS: PaymentMethod[] = [
   "combinar",
 ];
 
-export function CheckoutForm({ product, size }: Props) {
+export function CheckoutForm({ product, size, color }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
@@ -101,6 +102,7 @@ export function CheckoutForm({ product, size }: Props) {
       pricePix: product.pricePix,
       priceCard: product.priceCard,
       size,
+      ...(color ? { color } : {}),
       couponId: coupon?.id,
       ...values,
     };
@@ -131,6 +133,7 @@ export function CheckoutForm({ product, size }: Props) {
           priceCard: product.priceCard,
         },
         size,
+        ...(color ? { color } : {}),
         shipping: values.shipping,
         paymentMethod: values.paymentMethod,
         notes: values.notes,

@@ -14,16 +14,32 @@ export interface SizeStock {
 export interface ColorStock {
   name: string;
   soldOut: boolean;
+  sizes: SizeStock[];
+}
+
+function _normSizes(raw: unknown): SizeStock[] {
+  if (!Array.isArray(raw)) return [];
+  const VALID: ProductSize[] = ["PP", "P", "M", "G", "GG", "UNICO"];
+  return (raw as unknown[])
+    .filter((s) => s && typeof s === "object" && VALID.includes((s as Record<string, unknown>).size as ProductSize))
+    .map((s) => ({
+      size: (s as Record<string, unknown>).size as ProductSize,
+      quantity: Math.max(0, Math.round(Number((s as Record<string, unknown>).quantity) || 0)),
+    }));
 }
 
 export function normalizeColors(raw: unknown): ColorStock[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((c) =>
-      typeof c === "string"
-        ? { name: c, soldOut: false }
-        : { name: String((c as Record<string, unknown>)?.name ?? ""), soldOut: Boolean((c as Record<string, unknown>)?.soldOut) }
-    )
+    .map((c) => {
+      if (typeof c === "string") return { name: c, soldOut: false, sizes: [] };
+      const obj = c as Record<string, unknown>;
+      return {
+        name: String(obj?.name ?? ""),
+        soldOut: Boolean(obj?.soldOut),
+        sizes: _normSizes(obj?.sizes),
+      };
+    })
     .filter((c) => c.name.trim().length > 0);
 }
 
@@ -35,6 +51,8 @@ export interface Product {
   category: ProductCategory;
   pricePix: number;
   priceCard: number;
+  compareAtPricePix?: number;  // original price before discount (strikethrough)
+  compareAtPriceCard?: number;
   images: string[];
   sizes: SizeStock[];
   dropId: string | null;
@@ -83,6 +101,15 @@ export const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export const SIZE_ORDER: ProductSize[] = ["PP", "P", "M", "G", "GG", "UNICO"];
+
+export const SIZE_LABELS: Record<ProductSize, string> = {
+  PP: "PP",
+  P: "P",
+  M: "M",
+  G: "G",
+  GG: "GG",
+  UNICO: "Único (36 ao 42)",
+};
 
 export type PaymentMethod = "pix" | "cartao" | "transferencia" | "combinar";
 

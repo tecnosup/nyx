@@ -102,10 +102,9 @@ export async function getFeaturedProduct(): Promise<Product | null> {
         }
       }
     } catch {
-      // fallback below
+      // ignore, return null below
     }
   }
 
-  const all = await listProducts();
-  return all[0] ?? null;
+  return null;
 }

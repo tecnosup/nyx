@@ -13,6 +13,9 @@ export function ProductCard({ product, priority }: Props) {
   const level = stockLevel(product);
   const soldOut = level === "sold-out";
   const lowStock = level === "low";
+  const discountPct = product.compareAtPricePix && product.compareAtPricePix > product.pricePix
+    ? Math.round((1 - product.pricePix / product.compareAtPricePix) * 100)
+    : 0;
 
   return (
     <Link
@@ -42,6 +45,12 @@ export function ProductCard({ product, priority }: Props) {
           />
         )}
 
+        {discountPct > 0 && !soldOut && (
+          <div className="absolute top-3 left-3 bg-red-600 text-white label-mono text-[9px] px-2 py-1">
+            -{discountPct}%
+          </div>
+        )}
+
         {soldOut && (
           <div className="absolute inset-x-0 bottom-0 bg-nyx-ink/85 text-nyx-bg text-center py-1.5 label-mono">
             Esgotado
@@ -59,9 +68,16 @@ export function ProductCard({ product, priority }: Props) {
       <div className="mt-4 space-y-1">
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm text-nyx-ink leading-tight">{product.name}</p>
-          <p className="text-sm text-nyx-muted whitespace-nowrap">
-            {formatPrice(product.pricePix)}
-          </p>
+          <div className="text-right shrink-0">
+            {discountPct > 0 && (
+              <p className="text-xs text-nyx-soft line-through leading-tight">
+                {formatPrice(product.compareAtPricePix!)}
+              </p>
+            )}
+            <p className={`text-sm whitespace-nowrap ${discountPct > 0 ? "text-red-600" : "text-nyx-muted"}`}>
+              {formatPrice(product.pricePix)}
+            </p>
+          </div>
         </div>
         {lowStock && (
           <p className="label-mono text-[10px] text-amber-700">Últimas unidades</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight, ShoppingBag, PackagePlus } from "lucide-react";
 import {
@@ -40,6 +40,29 @@ export function WhatsAppCta({ product }: Props) {
   const hasColors = product.colors && product.colors.length > 1;
   const canAdd = !!size && (!hasColors || !!color);
 
+  // Sizes to show: filtered by selected color if that color has per-color sizes defined
+  const sizesToShow = useMemo(() => {
+    if (color && product.colors?.length) {
+      const selectedColor = product.colors.find((c) => c.name === color);
+      if (selectedColor?.sizes && selectedColor.sizes.length > 0) {
+        return selectedColor.sizes;
+      }
+    }
+    return product.sizes;
+  }, [color, product.colors, product.sizes]);
+
+  function handleColorChange(newColor: string) {
+    setColor(newColor);
+    // Reset size if it's not available in the new color
+    if (size) {
+      const nc = product.colors?.find((c) => c.name === newColor);
+      if (nc?.sizes && nc.sizes.length > 0) {
+        const hasCurrentSize = nc.sizes.some((s) => s.size === size && s.quantity > 0);
+        if (!hasCurrentSize) setSize(null);
+      }
+    }
+  }
+
   function handleAddToCart() {
     if (!size) return;
     addItem({
@@ -60,6 +83,16 @@ export function WhatsAppCta({ product }: Props) {
     <div className="space-y-6">
       {/* Preços */}
       <div className="space-y-1">
+        {product.compareAtPricePix && product.compareAtPricePix > product.pricePix && (
+          <div className="flex items-center gap-2">
+            <span className="label-mono text-[9px] px-2 py-0.5 bg-red-600 text-white">
+              -{Math.round((1 - product.pricePix / product.compareAtPricePix) * 100)}% OFF
+            </span>
+            <span className="text-nyx-soft line-through text-sm">
+              {formatPrice(product.compareAtPricePix)}
+            </span>
+          </div>
+        )}
         <p className="font-serif text-3xl md:text-4xl text-nyx-ink">
           {formatPrice(product.pricePix)}
           {product.priceCard > 0 && (
@@ -68,6 +101,9 @@ export function WhatsAppCta({ product }: Props) {
         </p>
         {product.priceCard > 0 && (
           <p className="text-sm text-nyx-muted">
+            {product.compareAtPriceCard && product.compareAtPriceCard > product.priceCard
+              ? <><span className="line-through opacity-50">{formatPrice(product.compareAtPriceCard)}</span>{" "}</>
+              : null}
             {formatPrice(product.priceCard)} no cartão
           </p>
         )}
@@ -93,13 +129,7 @@ export function WhatsAppCta({ product }: Props) {
         </>
       ) : (
         <>
-          <SizeSelector
-            sizes={product.sizes}
-            selected={size}
-            onSelect={setSize}
-          />
-
-          {/* Seletor de cor */}
+          {/* Seletor de cor — antes dos tamanhos para filtrar corretamente */}
           {hasColors && (
             <div className="space-y-2">
               <p className="label-mono text-xs text-nyx-muted">Cor</p>
@@ -108,7 +138,7 @@ export function WhatsAppCta({ product }: Props) {
                   <button
                     key={c.name}
                     type="button"
-                    onClick={() => !c.soldOut && setColor(c.name)}
+                    onClick={() => !c.soldOut && handleColorChange(c.name)}
                     disabled={c.soldOut}
                     className={`label-mono text-xs px-3 py-2 border transition-colors ${
                       c.soldOut
@@ -130,11 +160,17 @@ export function WhatsAppCta({ product }: Props) {
             </div>
           )}
 
+          <SizeSelector
+            sizes={sizesToShow}
+            selected={size}
+            onSelect={setSize}
+          />
+
           {/* Botões de ação */}
           <div className="space-y-2">
             {canAdd ? (
               <Link
-                href={`/checkout?slug=${encodeURIComponent(product.slug)}&size=${encodeURIComponent(size!)}`}
+                href={`/checkout?slug=${encodeURIComponent(product.slug)}&size=${encodeURIComponent(size!)}${color ? `&color=${encodeURIComponent(color)}` : ""}`}
                 className="cta-pill w-full rounded-none flex items-center justify-center gap-2"
               >
                 <span>Comprar agora</span>

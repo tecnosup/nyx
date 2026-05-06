@@ -15,7 +15,8 @@ export function ProductGallery({ images, alt }: Props) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
-      <div className="order-1 md:order-2 flex md:flex-col gap-3 md:w-20">
+      {/* Thumbnails — horizontal strip on mobile, vertical column on md+ */}
+      <div className="flex flex-row md:flex-col gap-3 md:w-20 order-1 md:order-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0">
         {images.map((src, i) => (
           <button
             key={src}
@@ -28,17 +29,12 @@ export function ProductGallery({ images, alt }: Props) {
             aria-label={`Ver imagem ${i + 1}`}
             aria-current={i === active ? "true" : undefined}
           >
-            <Image
-              src={src}
-              alt=""
-              fill
-              sizes="80px"
-              className="object-cover"
-            />
+            <Image src={src} alt="" fill sizes="80px" className="object-cover" />
           </button>
         ))}
       </div>
 
+      {/* Main image */}
       <div className="order-2 md:order-1 relative aspect-[4/5] product-stage overflow-hidden">
         <Image
           src={current}

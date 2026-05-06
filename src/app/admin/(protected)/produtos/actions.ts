@@ -9,6 +9,7 @@ import {
   adminIsSlugTaken,
   adminSetProductStatus,
   adminUpdateProduct,
+  adminRestockProduct,
   writeAudit,
   type ProductInput,
 } from "@/lib/admin-products";
@@ -33,6 +34,8 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   const category = (formData.get("category") as string | null)?.trim() ?? "";
   const pricePixRaw = formData.get("pricePix") as string | null;
   const priceCardRaw = formData.get("priceCard") as string | null;
+  const compareAtPixRaw = formData.get("compareAtPricePix") as string | null;
+  const compareAtCardRaw = formData.get("compareAtPriceCard") as string | null;
   const dropIdRaw = formData.get("dropId") as string | null;
   const status = formData.get("status") as ProductStatus | null;
   const slugRaw = (formData.get("slug") as string | null)?.trim() ?? "";
@@ -71,6 +74,26 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   if (images.length === 0) return { error: "Envie pelo menos uma imagem." };
   if (images.length > 8) return { error: "Máximo 8 imagens." };
 
+  let colors: ColorStock[];
+  try {
+    const raw = JSON.parse(colorsJson);
+    colors = Array.isArray(raw)
+      ? raw
+          .map((c) =>
+            typeof c === "string"
+              ? { name: c, soldOut: false, sizes: [] }
+              : {
+                  name: String(c?.name ?? ""),
+                  soldOut: Boolean(c?.soldOut),
+                  sizes: Array.isArray(c?.sizes) ? c.sizes : [],
+                }
+          )
+          .filter((c) => c.name.trim().length > 0)
+      : [];
+  } catch {
+    colors = [];
+  }
+
   let sizes: SizeStock[];
   try {
     const raw = JSON.parse(sizesJson);
@@ -81,25 +104,13 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
   } catch {
     return { error: "Lista de tamanhos inválida." };
   }
-  if (sizes.length === 0) return { error: "Informe pelo menos um tamanho." };
-
-  let colors: ColorStock[];
-  try {
-    const raw = JSON.parse(colorsJson);
-    colors = Array.isArray(raw)
-      ? raw
-          .map((c) =>
-            typeof c === "string"
-              ? { name: c, soldOut: false }
-              : { name: String(c?.name ?? ""), soldOut: Boolean(c?.soldOut) }
-          )
-          .filter((c) => c.name.trim().length > 0)
-      : [];
-  } catch {
-    colors = [];
-  }
+  const colorsHaveSizes = colors.some((c) => Array.isArray(c.sizes) && c.sizes.length > 0);
+  if (sizes.length === 0 && !colorsHaveSizes) return { error: "Informe pelo menos um tamanho." };
 
   const dropId = dropIdRaw && dropIdRaw !== "" ? dropIdRaw : null;
+
+  const compareAtPricePix = compareAtPixRaw?.trim() ? parseFloat(compareAtPixRaw) : undefined;
+  const compareAtPriceCard = compareAtCardRaw?.trim() ? parseFloat(compareAtCardRaw) : undefined;
 
   return {
     slug: slugRaw || slugify(name),
@@ -108,6 +119,8 @@ function parseForm(formData: FormData): ProductInput | { error: string } {
     category,
     pricePix,
     priceCard,
+    compareAtPricePix: Number.isFinite(compareAtPricePix) ? compareAtPricePix : undefined,
+    compareAtPriceCard: Number.isFinite(compareAtPriceCard) ? compareAtPriceCard : undefined,
     colors,
     images,
     sizes,
@@ -238,5 +251,23 @@ export async function toggleProductStatusAction(
   revalidatePath("/");
   revalidatePath("/produtos");
   revalidatePath("/produtos/categoria", "layout");
+  return { ok: true };
+}
+
+export async function restockProductAction(data: {
+  productId: string;
+  size: string;
+  quantity: number;
+  notes?: string;
+  color?: string;
+}): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+  if (!data.productId) return { ok: false, error: "Produto obrigatório." };
+  if (!data.size) return { ok: false, error: "Tamanho obrigatório." };
+  if (!Number.isFinite(data.quantity) || data.quantity <= 0)
+    return { ok: false, error: "Quantidade deve ser maior que zero." };
+  await adminRestockProduct(data.productId, data.size, data.quantity, data.notes, data.color);
+  revalidatePath("/admin/produtos");
+  revalidatePath("/produtos");
   return { ok: true };
 }

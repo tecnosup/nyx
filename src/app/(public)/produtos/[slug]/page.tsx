@@ -103,17 +103,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
               você pode gostar
             </p>
 
-            <div className="grid grid-cols-12 gap-6">
-              {related.map((p, i) => {
-                const layout =
-                  i === 0
-                    ? "col-span-12 sm:col-span-5 sm:col-start-1"
-                    : "col-span-12 sm:col-span-4 sm:col-start-7 sm:mt-24";
-                return (
+            <div className="grid grid-cols-2 gap-6">
+              {related.map((p) => (
                   <Link
                     key={p.id}
                     href={`/produtos/${p.slug}`}
-                    className={`group block ${layout}`}
+                    className="group block"
                   >
                     <div className="relative aspect-[4/5] product-stage overflow-hidden">
                       <Image
@@ -131,8 +126,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                       </p>
                     </div>
                   </Link>
-                );
-              })}
+              ))}
             </div>
           </section>
         )}

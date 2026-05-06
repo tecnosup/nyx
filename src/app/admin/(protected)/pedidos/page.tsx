@@ -1,24 +1,35 @@
 import { adminListOrders } from "@/lib/admin-orders";
+import { adminListCaixas } from "@/lib/admin-caixa";
+import { listProducts } from "@/lib/products";
 import { OrdersTable } from "@/components/admin/OrdersTable";
+import { CaixaSection } from "@/components/admin/CaixaSection";
 import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function PedidosPage() {
-  const orders = await adminListOrders(200);
+  const [orders, caixas, products] = await Promise.all([
+    adminListOrders(200),
+    adminListCaixas(30),
+    listProducts(),
+  ]);
 
   const pending = orders.filter((o) => o.status === "pending").length;
   const confirmed = orders.filter((o) => o.status === "confirmed").length;
+  const completed = orders.filter((o) => o.status === "completed").length;
   const revenuePix = orders
-    .filter((o) => o.status === "confirmed")
+    .filter((o) => o.status === "confirmed" || o.status === "completed")
     .reduce((s, o) => s + o.totalPix, 0);
+
+  const openCaixaOrders = orders.filter((o) => o.status === "completed" && !o.caixaId);
+  const pendingCaixa = openCaixaOrders.length;
 
   return (
     <div className="container-nyx py-12 md:py-16">
       <div className="mb-10">
         <h1 className="heading-display text-3xl md:text-4xl">Pedidos</h1>
         <p className="text-sm text-nyx-muted mt-1">
-          Pedidos recebidos via checkout — confirme ou cancele manualmente.
+          Gerencie pedidos do checkout e vendas presenciais.
         </p>
       </div>
 
@@ -27,19 +38,34 @@ export default async function PedidosPage() {
         <Kpi label="Total de pedidos" value={String(orders.length)} />
         <Kpi label="Pendentes" value={String(pending)} highlight={pending > 0} />
         <Kpi label="Confirmados" value={String(confirmed)} />
-        <Kpi label="Receita confirmada (Pix)" value={formatPrice(revenuePix)} />
+        <Kpi label="Concluídos" value={String(completed)} />
       </div>
 
-      {orders.length === 0 ? (
-        <div className="border border-nyx-line p-12 text-center">
-          <p className="label-mono text-nyx-muted">Nenhum pedido ainda.</p>
-          <p className="text-xs text-nyx-soft mt-1">
-            Os pedidos aparecem aqui assim que um cliente finaliza o checkout.
-          </p>
+      <div className="grid grid-cols-2 gap-4 mb-12">
+        <Kpi label="Receita confirmada + concluída" value={formatPrice(revenuePix)} />
+        <Kpi label="Aguardando fechamento de caixa" value={String(pendingCaixa)} highlight={pendingCaixa > 0} />
+      </div>
+
+      <div className="border border-nyx-line mb-16">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-nyx-line">
+          <p className="label-mono text-sm text-nyx-ink">Últimos pedidos</p>
+          <span className="label-mono text-[9px] text-nyx-soft">{orders.length} pedido{orders.length !== 1 ? "s" : ""}</span>
         </div>
-      ) : (
-        <OrdersTable orders={orders} />
-      )}
+        {orders.length === 0 ? (
+          <div className="p-12 text-center">
+            <p className="label-mono text-nyx-muted">Nenhum pedido ainda.</p>
+            <p className="text-xs text-nyx-soft mt-1">
+              Os pedidos aparecem aqui assim que um cliente finaliza o checkout ou você registra uma venda manual.
+            </p>
+          </div>
+        ) : (
+          <div className="max-h-[420px] overflow-y-auto scrollbar-thin">
+            <OrdersTable orders={orders} products={products} />
+          </div>
+        )}
+      </div>
+
+      <CaixaSection caixas={caixas} pendingCount={pendingCaixa} openOrders={openCaixaOrders} products={products} />
     </div>
   );
 }

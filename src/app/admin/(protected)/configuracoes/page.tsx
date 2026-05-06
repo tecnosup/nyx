@@ -16,7 +16,8 @@ export default async function AdminConfiguracoesPage() {
     <div className="container-nyx py-12 md:py-16 max-w-2xl">
       <div className="mb-10">
         <p className="label-mono text-nyx-muted mb-2">Painel</p>
-        <h1 className="heading-display text-3xl md:text-4xl">Configurações</h1>
+        <h1 className="heading-display text-3xl md:text-4xl">Vitrine</h1>
+        <p className="text-sm text-nyx-muted mt-1">Gerencie o que aparece em destaque no site.</p>
       </div>
 
       <section className="border border-nyx-line p-6">

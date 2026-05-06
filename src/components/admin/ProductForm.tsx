@@ -48,20 +48,26 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
   );
   const [colorInput, setColorInput] = useState("");
   const [images, setImages] = useState<string[]>(product?.images ?? []);
+  // standaloneSizes: used only when product has no colors
   const [sizes, setSizes] = useState<SizeStock[]>(product?.sizes ?? []);
+  const [hasDiscount, setHasDiscount] = useState<boolean>(
+    !!(product?.compareAtPricePix && product.compareAtPricePix > product.pricePix)
+  );
+  const [compareAtPixStr, setCompareAtPixStr] = useState<string>(
+    product?.compareAtPricePix ? String(product.compareAtPricePix) : ""
+  );
+  const [compareAtCardStr, setCompareAtCardStr] = useState<string>(
+    product?.compareAtPriceCard ? String(product.compareAtPriceCard) : ""
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function addColor() {
     const trimmed = colorInput.trim();
     if (trimmed && !colors.find((c) => c.name === trimmed) && colors.length < 5) {
-      setColors([...colors, { name: trimmed, soldOut: false }]);
+      setColors([...colors, { name: trimmed, soldOut: false, sizes: [] }]);
       setColorInput("");
     }
-  }
-
-  function toggleColorSoldOut(name: string) {
-    setColors(colors.map((c) => c.name === name ? { ...c, soldOut: !c.soldOut } : c));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -73,12 +79,15 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
     fd.set("category", category);
     fd.set("pricePix", pricePixStr);
     fd.set("priceCard", priceCardStr);
+    if (hasDiscount && compareAtPixStr) fd.set("compareAtPricePix", compareAtPixStr);
+    if (hasDiscount && compareAtCardStr) fd.set("compareAtPriceCard", compareAtCardStr);
     fd.set("dropId", dropId);
     fd.set("status", status);
     if (isLimited) fd.set("isLimited", "on");
     fd.set("colors", JSON.stringify(colors));
     fd.set("images", JSON.stringify(images));
-    fd.set("sizes", JSON.stringify(sizes));
+    // sizes: standalone only used when no colors; server aggregates from colors otherwise
+    fd.set("sizes", JSON.stringify(colors.length > 0 ? [] : sizes));
 
     setError(null);
     startTransition(async () => {
@@ -155,74 +164,121 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
       </div>
 
       {/* Preços */}
-      <div>
-        <p className="label-mono text-nyx-muted mb-3">Preços</p>
-        <div className="grid md:grid-cols-2 gap-6">
-          <Field label="Preço Pix (R$)" required hint="Obrigatório para publicar">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="label-mono text-nyx-muted">Preços</p>
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
-              required
-              type="number"
-              min={0.01}
-              step={0.01}
-              value={pricePixStr}
-              onChange={(e) => setPricePixStr(e.target.value)}
-              className="input-nyx"
-              placeholder="0,00"
+              type="checkbox"
+              checked={hasDiscount}
+              onChange={(e) => {
+                setHasDiscount(e.target.checked);
+                if (!e.target.checked) { setCompareAtPixStr(""); setCompareAtCardStr(""); }
+              }}
+              className="accent-nyx-ink"
             />
-          </Field>
-          <Field label="Preço Cartão (R$)" hint="Opcional — deixe vazio se não aceita cartão">
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              value={priceCardStr}
-              onChange={(e) => setPriceCardStr(e.target.value)}
-              className="input-nyx"
-              placeholder="— opcional —"
-            />
-          </Field>
+            <span className="label-mono text-[10px] text-nyx-muted">Aplicar desconto</span>
+          </label>
         </div>
+
+        {!hasDiscount ? (
+          <div className="grid md:grid-cols-2 gap-6">
+            <Field label="Preço Pix (R$)" required hint="Obrigatório para publicar">
+              <input
+                required
+                type="number"
+                min={0.01}
+                step={0.01}
+                value={pricePixStr}
+                onChange={(e) => setPricePixStr(e.target.value)}
+                className="input-nyx"
+                placeholder="0,00"
+              />
+            </Field>
+            <Field label="Preço Cartão (R$)" hint="Opcional — deixe vazio se não aceita cartão">
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={priceCardStr}
+                onChange={(e) => setPriceCardStr(e.target.value)}
+                className="input-nyx"
+                placeholder="— opcional —"
+              />
+            </Field>
+          </div>
+        ) : (
+          <div className="border border-amber-400/40 bg-amber-50/5 p-4 space-y-4">
+            <div>
+              <p className="label-mono text-[10px] text-nyx-muted mb-3">Valor cheio <span className="text-nyx-soft">(aparece riscado)</span></p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="Pix (R$)" required>
+                  <input
+                    required
+                    type="number"
+                    min={0.01}
+                    step={0.01}
+                    value={compareAtPixStr}
+                    onChange={(e) => setCompareAtPixStr(e.target.value)}
+                    className="input-nyx"
+                    placeholder="Ex: 99,90"
+                  />
+                </Field>
+                <Field label="Cartão (R$)" hint="Opcional">
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={compareAtCardStr}
+                    onChange={(e) => setCompareAtCardStr(e.target.value)}
+                    className="input-nyx"
+                    placeholder="— opcional —"
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <div>
+              <p className="label-mono text-[10px] text-nyx-muted mb-3">Valor com desconto <span className="text-nyx-soft">(preço final)</span></p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="Pix (R$)" required>
+                  <input
+                    required
+                    type="number"
+                    min={0.01}
+                    step={0.01}
+                    value={pricePixStr}
+                    onChange={(e) => setPricePixStr(e.target.value)}
+                    className="input-nyx"
+                    placeholder="0,00"
+                  />
+                </Field>
+                <Field label="Cartão (R$)" hint="Opcional">
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={priceCardStr}
+                    onChange={(e) => setPriceCardStr(e.target.value)}
+                    className="input-nyx"
+                    placeholder="— opcional —"
+                  />
+                </Field>
+              </div>
+            </div>
+
+            {compareAtPixStr && pricePixStr && parseFloat(compareAtPixStr) > parseFloat(pricePixStr) && (
+              <p className="label-mono text-[10px] text-emerald-600">
+                Desconto: {Math.round((1 - parseFloat(pricePixStr) / parseFloat(compareAtPixStr)) * 100)}% off
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Cores disponíveis */}
       <div>
         <p className="label-mono text-nyx-muted mb-3">Cores disponíveis</p>
-        {colors.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {colors.map((c) => (
-              <span
-                key={c.name}
-                className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-sm ${
-                  c.soldOut ? "border-red-300 bg-red-50" : "border-nyx-line"
-                }`}
-              >
-                <span className={c.soldOut ? "line-through text-nyx-muted" : ""}>{c.name}</span>
-                {c.soldOut && (
-                  <span className="text-[10px] text-red-600 font-mono uppercase">esgotado</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => toggleColorSoldOut(c.name)}
-                  className={`text-[10px] font-mono px-1 border transition-colors ${
-                    c.soldOut
-                      ? "border-green-400 text-green-700 hover:bg-green-50"
-                      : "border-amber-400 text-amber-700 hover:bg-amber-50"
-                  }`}
-                >
-                  {c.soldOut ? "reativar" : "esgotar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setColors(colors.filter((x) => x.name !== c.name))}
-                  className="text-nyx-muted hover:text-nyx-ink"
-                  aria-label={`Remover ${c.name}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
         {colors.length < 5 && (
           <div className="flex gap-2">
             <input
@@ -249,7 +305,9 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
           </div>
         )}
         <p className="label-mono text-[10px] text-nyx-muted mt-1">
-          Pressione Enter ou clique + Cor para adicionar. Até 5 cores.
+          {colors.length === 0
+            ? "Adicione cores para definir estoque por cor. Até 5 cores."
+            : "Pressione Enter ou clique + Cor para adicionar. Estoques e soldOut por cor abaixo."}
         </p>
       </div>
 
@@ -258,7 +316,12 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
       </div>
 
       <div>
-        <SizeStockEditor value={sizes} onChange={setSizes} />
+        <SizeStockEditor
+          colors={colors}
+          onChangeColors={setColors}
+          standaloneSizes={sizes}
+          onChangeStandalone={setSizes}
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -292,14 +355,17 @@ export function ProductForm({ mode, product, drops, categories, action }: Props)
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-4 border-t border-nyx-line pt-6">
-        <Link href="/admin/produtos" className="label-mono text-nyx-muted hover:text-nyx-ink">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3 border-t border-nyx-line pt-6">
+        <Link
+          href="/admin/produtos"
+          className="inline-flex items-center justify-center label-mono text-xs px-5 py-2.5 border border-nyx-line text-nyx-muted hover:border-nyx-muted hover:text-nyx-ink transition-colors"
+        >
           ← Cancelar
         </Link>
         <button
           type="submit"
           disabled={pending}
-          className="btn-primary disabled:opacity-50"
+          className="flex-1 sm:flex-none inline-flex items-center justify-center label-mono text-xs px-8 py-2.5 bg-nyx-ink text-nyx-bg hover:bg-nyx-muted transition-colors disabled:opacity-50"
         >
           {pending ? "Salvando…" : mode === "create" ? "Criar produto" : "Salvar alterações"}
         </button>

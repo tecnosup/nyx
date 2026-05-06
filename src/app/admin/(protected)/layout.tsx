@@ -1,24 +1,39 @@
 import Link from "next/link";
 import { AdminAuthGuard } from "@/components/admin/AdminAuthGuard";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { AdminSidebar, AdminBottomNav } from "@/components/admin/AdminNav";
+import { adminOrderStats } from "@/lib/admin-orders";
 
-export default function AdminProtectedLayout({
+export default async function AdminProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const orderStats = await adminOrderStats();
+  const pendingCount = orderStats.pending;
+
   return (
     <AdminAuthGuard>
-      <div className="min-h-screen flex flex-col bg-nyx-bg">
-        <header className="border-b border-nyx-line">
-          <div className="container-nyx flex items-center justify-between h-16">
-            <Link href="/admin" className="heading-display text-xl tracking-tight">
+      <div className="min-h-screen flex bg-nyx-bg">
+        {/* Desktop sidebar */}
+        <AdminSidebar pendingCount={pendingCount} />
+
+        {/* Main content — offset do sidebar fixo no desktop */}
+        <div className="flex-1 flex flex-col min-h-screen min-w-0 md:pl-56">
+          {/* Mobile header */}
+          <header className="md:hidden flex items-center h-14 px-5 border-b border-nyx-line shrink-0">
+            <Link href="/admin" className="heading-display text-lg tracking-tight">
               NYX<span className="text-nyx-muted">.admin</span>
             </Link>
-            <AdminNav />
-          </div>
-        </header>
-        <main className="flex-1">{children}</main>
+          </header>
+
+          {/* Page content — extra bottom padding on mobile for bottom nav */}
+          <main className="flex-1 pb-20 md:pb-0">
+            {children}
+          </main>
+        </div>
+
+        {/* Mobile bottom nav */}
+        <AdminBottomNav pendingCount={pendingCount} />
       </div>
     </AdminAuthGuard>
   );
