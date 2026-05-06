@@ -46,6 +46,7 @@ export function normalizeColors(raw: unknown): ColorStock[] {
 export interface Product {
   id: string;
   slug: string;
+  deleted?: boolean;
   name: string;
   description: string;
   category: ProductCategory;

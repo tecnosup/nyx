@@ -289,9 +289,9 @@ export async function adminRestockProduct(
     if (color) {
       updatedColors = colors.map((c) => {
         if (c.name !== color) return c;
-        const cs: Array<{ size: string; quantity: number }> = c.sizes ?? [];
+        const cs: SizeStock[] = (c.sizes ?? []) as SizeStock[];
         const updatedCs = cs.map((s) => s.size === size ? { ...s, quantity: s.quantity + quantity } : s);
-        if (!cs.find((s) => s.size === size)) updatedCs.push({ size, quantity });
+        if (!cs.find((s) => s.size === size)) updatedCs.push({ size: size as SizeStock["size"], quantity });
         return { ...c, sizes: updatedCs };
       });
     }

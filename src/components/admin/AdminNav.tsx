@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingBag, TrendingUp, Package,
-  Layers, Tag, Percent, ClipboardList, Star, LogOut,
+  Layers, Tag, Percent, ClipboardList, Star,
 } from "lucide-react";
 import { AdminSignOut } from "@/app/admin/(protected)/AdminSignOut";
 

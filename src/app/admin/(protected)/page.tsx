@@ -176,9 +176,8 @@ export default async function AdminDashboardPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-nyx-ink">{formatPrice(order.totalPix)}</p>
-                      <p className={`text-[9px] label-mono ${STATUS_COLOR[order.status]}`}>
-                        {STATUS_LABEL[order.status]}
-                      </p>
+                      <p className={`text-[9px] label-mono ${STATUS_COLOR[order.status]}`}>{STATUS_LABEL[order.status]}</p>
+                      <p className="text-[9px] label-mono text-nyx-soft">{dt} · {hr}</p>
                     </div>
                   </div>
                 );

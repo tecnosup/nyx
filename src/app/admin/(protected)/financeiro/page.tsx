@@ -8,13 +8,6 @@ import { DashboardChart } from "@/components/admin/DashboardChart";
 
 export const dynamic = "force-dynamic";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  aluguel: "Aluguel",
-  insumos: "Insumos / Produtos",
-  marketing: "Marketing",
-  logistica: "Logística",
-  outros: "Outros",
-};
 
 const FREQUENCY_LABELS: Record<string, string> = {
   mensal: "Mensal",

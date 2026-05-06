@@ -114,7 +114,7 @@ function OrderRow({ order, products, isOpen, onToggle }: { order: Order; product
   const date = new Date(order.createdAt);
   const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
   const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  const isManual = order.type === "manual";
+  const _isManual = order.type === "manual"; void _isManual;
 
   return (
     <div className={`border transition-colors ${
