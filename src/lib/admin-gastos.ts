@@ -60,6 +60,9 @@ export interface Gasto {
   frequency: GastoFrequency;
   category: GastoCategory;
   active: boolean;
+  date?: string;           // "YYYY-MM-DD" — data específica do gasto
+  remindRenewal?: boolean; // avisar sobre renovação
+  dueDate?: string;        // "YYYY-MM-DD" — data de vencimento/renovação
   createdAt: number;
   updatedAt: number;
 }
@@ -69,16 +72,26 @@ export interface CreateGastoInput {
   amount: number;
   frequency: GastoFrequency;
   category: GastoCategory;
+  date?: string;
+  remindRenewal?: boolean;
+  dueDate?: string;
 }
 
 export async function adminCreateGasto(input: CreateGastoInput): Promise<string> {
   const now = Date.now();
-  const ref = await adminDb().collection(COLLECTION).add({
-    ...input,
+  const data: Record<string, unknown> = {
+    description: input.description,
+    amount: input.amount,
+    frequency: input.frequency,
+    category: input.category,
     active: true,
     createdAt: now,
     updatedAt: now,
-  });
+  };
+  if (input.date) data.date = input.date;
+  if (input.remindRenewal) data.remindRenewal = true;
+  if (input.dueDate) data.dueDate = input.dueDate;
+  const ref = await adminDb().collection(COLLECTION).add(data);
   return ref.id;
 }
 
@@ -92,7 +105,7 @@ export async function adminListGastos(): Promise<Gasto[]> {
 
 export async function adminUpdateGasto(
   id: string,
-  updates: Partial<Pick<Gasto, "description" | "amount" | "frequency" | "category" | "active">>
+  updates: Partial<Pick<Gasto, "description" | "amount" | "frequency" | "category" | "active" | "date" | "remindRenewal" | "dueDate">>
 ): Promise<void> {
   await adminDb()
     .collection(COLLECTION)

@@ -5,6 +5,7 @@ import { formatPrice } from "@/lib/utils";
 import { GastosManager } from "@/components/admin/GastosManager";
 import { FinanceiroCharts } from "@/components/admin/FinanceiroCharts";
 import { DashboardChart } from "@/components/admin/DashboardChart";
+import { GastoReminderBanner } from "@/components/admin/GastoReminderBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,8 @@ export default async function FinanceiroPage() {
           Visão geral de faturamento, gastos e lucro estimado.
         </p>
       </div>
+
+      <GastoReminderBanner gastos={gastos} />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">

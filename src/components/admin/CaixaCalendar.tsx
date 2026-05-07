@@ -16,6 +16,7 @@ import type { Caixa } from "@/lib/admin-caixa";
 import type { Order, OrderItem } from "@/lib/admin-orders";
 import type { Product, PaymentMethod } from "@/lib/types";
 import { PAYMENT_LABELS, SIZE_LABELS } from "@/lib/types";
+import type { Gasto } from "@/lib/admin-gastos";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -67,9 +68,10 @@ interface Props {
   caixas: Caixa[];
   openOrders: Order[];
   products: Product[];
+  gastos?: Gasto[];
 }
 
-export function CaixaCalendar({ caixas, openOrders, products }: Props) {
+export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Props) {
   const today = todaySP();
   const now = new Date();
 
@@ -100,6 +102,17 @@ export function CaixaCalendar({ caixas, openOrders, products }: Props) {
     }
     return m;
   }, [openOrders]);
+
+  const gastosByDate = useMemo(() => {
+    const m = new Map<string, Gasto[]>();
+    for (const g of gastos) {
+      if (!g.date) continue;
+      const arr = m.get(g.date) ?? [];
+      arr.push(g);
+      m.set(g.date, arr);
+    }
+    return m;
+  }, [gastos]);
 
   const cells = useMemo(() => buildMonthCells(viewYear, viewMonth), [viewYear, viewMonth]);
 
@@ -149,6 +162,7 @@ export function CaixaCalendar({ caixas, openOrders, products }: Props) {
 
   const selCaixa = caixaByDate.get(selectedDate);
   const selOpen = openByDate.get(selectedDate) ?? [];
+  const selGastos = gastosByDate.get(selectedDate) ?? [];
   const isFutureDay = selectedDate > today;
   const hasActivity = !!(selCaixa || selOpen.length > 0);
 
@@ -273,6 +287,21 @@ export function CaixaCalendar({ caixas, openOrders, products }: Props) {
           </div>
         )}
 
+        {/* Gastos do dia */}
+        {selGastos.length > 0 && (
+          <div className="pt-3 border-t border-nyx-line/50">
+            <p className="label-mono text-[9px] text-nyx-soft mb-2">Gastos registrados</p>
+            <div className="space-y-1.5">
+              {selGastos.map((g) => (
+                <div key={g.id} className="flex items-center justify-between text-xs">
+                  <span className="text-nyx-muted truncate">{g.description}</span>
+                  <span className="text-red-400 shrink-0 ml-2 tabular-nums">− {formatPrice(g.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {successMsg && <p className="text-xs text-emerald-500">{successMsg}</p>}
       </div>
 
@@ -302,6 +331,7 @@ export function CaixaCalendar({ caixas, openOrders, products }: Props) {
 
             const hasCaixa = caixaByDate.has(iso);
             const hasOpen = openByDate.has(iso);
+            const hasGasto = gastosByDate.has(iso);
             const isToday = iso === today;
             const isFuture = iso > today;
             const isSelected = iso === selectedDate;
@@ -342,6 +372,9 @@ export function CaixaCalendar({ caixas, openOrders, products }: Props) {
                 {hasOpen && !hasCaixa && (
                   <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-400"}`} />
                 )}
+                {hasGasto && (
+                  <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-red-300" : "bg-red-400/70"}`} />
+                )}
                 {isToday && !isSelected && (
                   <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-3 h-px bg-nyx-muted" />
                 )}
@@ -358,6 +391,10 @@ export function CaixaCalendar({ caixas, openOrders, products }: Props) {
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 border border-amber-400/50" />
             <span className="label-mono text-[9px] text-nyx-muted">Pendente / aberto</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-red-400/70" />
+            <span className="label-mono text-[9px] text-nyx-muted">Gasto registrado</span>
           </div>
         </div>
       </div>
