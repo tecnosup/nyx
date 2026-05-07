@@ -296,7 +296,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                 className="w-full justify-center inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-2 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors"
               >
                 <Plus size={11} />
-                Adicionar venda retroativa
+                {selectedDate === today ? "Registrar primeira venda do dia" : "Adicionar venda retroativa"}
               </button>
             )}
             {isFinanceiro && !isFutureDay && (
