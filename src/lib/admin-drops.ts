@@ -89,6 +89,10 @@ export async function adminRestoreDrop(id: string): Promise<void> {
     .update({ deleted: false, deletedAt: null, updatedAt: Date.now() });
 }
 
+export async function adminPermanentlyDeleteDrop(id: string): Promise<void> {
+  await adminDb().collection(COLLECTION).doc(id).delete();
+}
+
 export async function adminDropSlugTaken(
   slug: string,
   exceptId?: string

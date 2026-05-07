@@ -4,7 +4,7 @@ import { adminListProducts } from "@/lib/admin-products";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { RestoreButton } from "@/components/admin/RestoreButton";
 import type { DropStatus } from "@/lib/types";
-import { deleteDropAction, restoreDropAction } from "./actions";
+import { deleteDropAction, restoreDropAction, permanentlyDeleteDropAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -119,7 +119,7 @@ export default async function AdminDropsPage() {
                 <tr>
                   <th className="text-left px-4 py-3">Nome</th>
                   <th className="text-left px-4 py-3">Lançamento</th>
-                  <th className="text-right px-4 py-3">Ação</th>
+                  <th className="text-right px-4 py-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -137,7 +137,14 @@ export default async function AdminDropsPage() {
                       })}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <RestoreButton onRestore={restoreDropAction.bind(null, d.id)} />
+                      <div className="flex items-center justify-end gap-4">
+                        <RestoreButton onRestore={restoreDropAction.bind(null, d.id)} />
+                        <DeleteButton
+                          onDelete={permanentlyDeleteDropAction.bind(null, d.id)}
+                          confirmMessage={`Excluir "${d.name}" permanentemente? Esta ação não pode ser desfeita.`}
+                          label="Apagar"
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}

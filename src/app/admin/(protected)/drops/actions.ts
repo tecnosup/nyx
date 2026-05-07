@@ -7,6 +7,7 @@ import {
   adminCreateDrop,
   adminDeleteDrop,
   adminDropSlugTaken,
+  adminPermanentlyDeleteDrop,
   adminRestoreDrop,
   adminUpdateDrop,
   type DropInput,
@@ -137,6 +138,13 @@ export async function deleteDropAction(id: string): Promise<ActionResult> {
 
   revalidatePath("/admin/drops");
   revalidatePath("/");
+  return { ok: true };
+}
+
+export async function permanentlyDeleteDropAction(id: string): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+  await adminPermanentlyDeleteDrop(id);
+  revalidatePath("/admin/drops");
   return { ok: true };
 }
 
