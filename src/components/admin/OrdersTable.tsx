@@ -10,6 +10,7 @@ import {
   setOrderStatusAction,
   updateOrderAction,
   createManualOrderAction,
+  deleteOrderAction,
 } from "@/app/admin/(protected)/pedidos/actions";
 import type { Order, OrderStatus, OrderItem } from "@/lib/admin-orders";
 import type { PaymentMethod, Product } from "@/lib/types";
@@ -51,9 +52,10 @@ const STATUS_ORDER: Record<OrderStatus, number> = { pending: 0, confirmed: 1, co
 export function OrdersTable({ orders, products = [] }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showManual, setShowManual] = useState(false);
+  const [localOrders, setLocalOrders] = useState<Order[]>(orders);
 
   // Pendentes no topo, demais por data decrescente
-  const sorted = [...orders].sort((a, b) => {
+  const sorted = [...localOrders].sort((a, b) => {
     const sd = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
     if (sd !== 0) return sd;
     return b.createdAt - a.createdAt;
@@ -80,6 +82,7 @@ export function OrdersTable({ orders, products = [] }: Props) {
             products={products}
             isOpen={expanded === order.id}
             onToggle={() => setExpanded((p) => (p === order.id ? null : order.id))}
+            onDeleted={() => setLocalOrders((prev) => prev.filter((o) => o.id !== order.id))}
           />
         ))}
       </div>
@@ -89,10 +92,18 @@ export function OrdersTable({ orders, products = [] }: Props) {
   );
 }
 
-function OrderRow({ order, products, isOpen, onToggle }: { order: Order; products: Product[]; isOpen: boolean; onToggle: () => void }) {
+function OrderRow({ order, products, isOpen, onToggle, onDeleted }: { order: Order; products: Product[]; isOpen: boolean; onToggle: () => void; onDeleted: () => void }) {
   const [pending, startTransition] = useTransition();
   const [localStatus, setLocalStatus] = useState<OrderStatus>(order.status);
   const [editing, setEditing] = useState(false);
+
+  function handleDelete() {
+    if (!confirm(`Excluir permanentemente o pedido de "${order.customerName}"? Esta ação não pode ser desfeita.`)) return;
+    startTransition(async () => {
+      await deleteOrderAction(order.id);
+      onDeleted();
+    });
+  }
 
   function handleStatus(status: OrderStatus) {
     startTransition(async () => {
@@ -195,8 +206,8 @@ function OrderRow({ order, products, isOpen, onToggle }: { order: Order; product
           )}
 
           {/* Ações */}
-          {localStatus !== "cancelled" && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-nyx-line">
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-nyx-line">
+            {localStatus !== "cancelled" && (<>
               {order.customerPhone && localStatus !== "pending" && (
                 <a
                   href={`https://wa.me/55${order.customerPhone.replace(/\D/g, "")}`}
@@ -253,8 +264,18 @@ function OrderRow({ order, products, isOpen, onToggle }: { order: Order; product
               </button>
 
               {pending && <Clock size={14} className="text-nyx-muted animate-pulse self-center" />}
-            </div>
-          )}
+            </>)}
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={handleDelete}
+              className="inline-flex items-center gap-1.5 label-mono text-xs px-4 py-2 border border-nyx-line text-nyx-soft hover:border-red-500 hover:text-red-600 transition-colors disabled:opacity-50 ml-auto"
+            >
+              <Trash2 size={13} />
+              Excluir pedido
+            </button>
+          </div>
         </div>
       )}
 

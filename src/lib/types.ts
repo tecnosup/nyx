@@ -79,7 +79,7 @@ export interface Drop {
 export type StockLevel = "in-stock" | "low" | "sold-out";
 
 export function totalStock(product: Pick<Product, "sizes">): number {
-  return product.sizes.reduce((sum, s) => sum + s.quantity, 0);
+  return (product.sizes ?? []).reduce((sum, s) => sum + s.quantity, 0);
 }
 
 export function stockLevel(product: Pick<Product, "sizes">): StockLevel {
@@ -90,7 +90,7 @@ export function stockLevel(product: Pick<Product, "sizes">): StockLevel {
 }
 
 export function availableSizes(product: Pick<Product, "sizes">): SizeStock[] {
-  return product.sizes.filter((s) => s.quantity > 0);
+  return (product.sizes ?? []).filter((s) => s.quantity > 0);
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {

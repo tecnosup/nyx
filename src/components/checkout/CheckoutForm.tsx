@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2, CheckCircle, ArrowRight } from "lucide-react";
 import { z } from "zod";
 import { shippingSchema, paymentMethodSchema } from "@/lib/checkout";
 import { buildOrderMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -46,6 +46,8 @@ export function CheckoutForm({ product, size, color }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [whatsappUrl, setWhatsappUrl] = useState("");
 
   const {
     register,
@@ -141,9 +143,51 @@ export function CheckoutForm({ product, size, color }: Props) {
       });
       const url = buildWhatsAppUrl(message);
       window.open(url, "_blank", "noopener,noreferrer");
+      setWhatsappUrl(url);
+      setSubmitted(true);
     } catch {
       setServerError("Erro de conexão. Tente novamente.");
     }
+  }
+
+  if (submitted) {
+    return (
+      <div className="space-y-8 py-4">
+        <div className="flex flex-col items-center text-center space-y-4 py-6">
+          <CheckCircle size={48} className="text-green-600" strokeWidth={1.5} />
+          <div>
+            <h2 className="heading-display text-2xl text-nyx-ink">Pedido enviado!</h2>
+            <p className="text-nyx-muted mt-2 max-w-sm">
+              Uma janela do WhatsApp foi aberta com seu pedido já formatado. Se não abriu automaticamente, clique no botão abaixo.
+            </p>
+          </div>
+        </div>
+
+        <div className="border border-nyx-line bg-nyx-cream/40 p-5 space-y-2 text-sm text-nyx-muted">
+          <p className="font-medium text-nyx-ink">O que acontece agora?</p>
+          <ul className="space-y-1.5 list-none">
+            <li>① A Giovanna recebe seu pedido pelo WhatsApp</li>
+            <li>② Ela confirma disponibilidade, frete e prazo</li>
+            <li>③ Você realiza o pagamento e combinam a entrega</li>
+          </ul>
+        </div>
+
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-primary w-full justify-center"
+        >
+          <MessageCircle size={18} />
+          Abrir WhatsApp novamente
+        </a>
+
+        <a href="/produtos" className="flex items-center justify-center gap-1 label-mono text-xs text-nyx-muted hover:text-nyx-ink transition-colors">
+          Continuar comprando
+          <ArrowRight size={13} />
+        </a>
+      </div>
+    );
   }
 
   return (

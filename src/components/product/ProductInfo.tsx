@@ -38,7 +38,7 @@ export function ProductInfo({ product, drop }: Props) {
 
       <div className="h-px bg-nyx-line" />
 
-      <p className="text-sm text-nyx-muted leading-relaxed">
+      <p className="text-sm text-nyx-muted leading-relaxed break-words">
         {product.description}
       </p>
 
