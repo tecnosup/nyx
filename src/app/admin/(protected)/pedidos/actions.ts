@@ -83,48 +83,53 @@ export async function createManualOrderAction(data: {
   if (!data.customerName.trim()) return { ok: false, error: "Nome do cliente obrigatório." };
   if (data.items.length === 0) return { ok: false, error: "Adicione ao menos um item." };
 
-  const now = Date.now();
-  const id = await adminCreateOrder({
-    type: "manual",
-    customerName: data.customerName.trim(),
-    customerPhone: data.customerPhone.trim(),
-    paymentMethod: data.paymentMethod,
-    notes: data.notes?.trim(),
-    items: data.items,
-    saleDate: data.saleDate,
-  });
-
-  if (data.createAsCompleted) {
-    const stockItems = data.items.map((i) => ({ productId: i.productId, size: i.size }));
-    await adminAdjustStock(stockItems, -1, { type: "venda" });
-    await adminSetOrderStatus(id, "completed", { stockDeducted: true });
-
-    // Auto-close into the caixa for that date (past or today)
-    const totalPix = data.items.reduce((s, i) => s + i.pricePix, 0);
-    const totalCard = data.items.reduce((s, i) => s + i.priceCard, 0);
-    const fakeOrder: Order = {
-      id,
+  try {
+    const now = Date.now();
+    const id = await adminCreateOrder({
       type: "manual",
-      status: "completed",
       customerName: data.customerName.trim(),
       customerPhone: data.customerPhone.trim(),
       paymentMethod: data.paymentMethod,
+      notes: data.notes?.trim(),
       items: data.items,
-      totalPix,
-      totalCard,
       saleDate: data.saleDate,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const groups = await adminCloseCaixa([fakeOrder]);
-    for (const { caixaId, orderIds } of groups) {
-      await adminMarkOrdersInCaixa(orderIds, caixaId);
-    }
-    revalidatePath("/admin/financeiro");
-  }
+    });
 
-  revalidate();
-  return { ok: true, id };
+    if (data.createAsCompleted) {
+      const stockItems = data.items.map((i) => ({ productId: i.productId, size: i.size }));
+      await adminAdjustStock(stockItems, -1, { type: "venda" });
+      await adminSetOrderStatus(id, "completed", { stockDeducted: true });
+
+      const totalPix = data.items.reduce((s, i) => s + i.pricePix, 0);
+      const totalCard = data.items.reduce((s, i) => s + i.priceCard, 0);
+      const fakeOrder: Order = {
+        id,
+        type: "manual",
+        status: "completed",
+        customerName: data.customerName.trim(),
+        customerPhone: data.customerPhone.trim(),
+        paymentMethod: data.paymentMethod,
+        items: data.items,
+        totalPix,
+        totalCard,
+        saleDate: data.saleDate,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const groups = await adminCloseCaixa([fakeOrder]);
+      for (const { caixaId, orderIds } of groups) {
+        await adminMarkOrdersInCaixa(orderIds, caixaId);
+      }
+      revalidatePath("/admin/financeiro");
+    }
+
+    revalidate();
+    return { ok: true, id };
+  } catch (err) {
+    console.error("[createManualOrderAction]", err);
+    const msg = err instanceof Error ? err.message : "Erro desconhecido";
+    return { ok: false, error: `Erro ao registrar venda: ${msg}` };
+  }
 }
 
 export async function closeCaixaAction(): Promise<ActionResult & { total?: number; count?: number }> {
