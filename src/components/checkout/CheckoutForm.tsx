@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MessageCircle, Loader2, CheckCircle, ArrowRight } from "lucide-react";
@@ -182,10 +183,10 @@ export function CheckoutForm({ product, size, color }: Props) {
           Abrir WhatsApp novamente
         </a>
 
-        <a href="/produtos" className="flex items-center justify-center gap-1 label-mono text-xs text-nyx-muted hover:text-nyx-ink transition-colors">
+        <Link href="/produtos" className="flex items-center justify-center gap-1 label-mono text-xs text-nyx-muted hover:text-nyx-ink transition-colors">
           Continuar comprando
           <ArrowRight size={13} />
-        </a>
+        </Link>
       </div>
     );
   }
