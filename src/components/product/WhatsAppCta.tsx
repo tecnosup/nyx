@@ -85,7 +85,7 @@ export function WhatsAppCta({ product }: Props) {
       <div className="space-y-1">
         {product.compareAtPricePix && product.compareAtPricePix > product.pricePix && (
           <div className="flex items-center gap-2">
-            <span className="label-mono text-[9px] px-2 py-0.5 bg-red-600 text-white">
+            <span className="label-mono text-[9px] px-2 py-0.5 bg-emerald-500 text-white">
               -{Math.round((1 - product.pricePix / product.compareAtPricePix) * 100)}% OFF
             </span>
             <span className="text-nyx-soft line-through text-sm">

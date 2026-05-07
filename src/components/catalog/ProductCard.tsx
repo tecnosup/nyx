@@ -46,7 +46,7 @@ export function ProductCard({ product, priority }: Props) {
         )}
 
         {discountPct > 0 && !soldOut && (
-          <div className="absolute top-3 left-3 bg-red-600 text-white label-mono text-[9px] px-2 py-1">
+          <div className="absolute top-3 left-3 bg-emerald-500 text-white label-mono text-[9px] px-2 py-1">
             -{discountPct}%
           </div>
         )}
@@ -74,7 +74,7 @@ export function ProductCard({ product, priority }: Props) {
                 {formatPrice(product.compareAtPricePix!)}
               </p>
             )}
-            <p className={`text-sm whitespace-nowrap ${discountPct > 0 ? "text-red-600" : "text-nyx-muted"}`}>
+            <p className={`text-sm whitespace-nowrap ${discountPct > 0 ? "text-emerald-500" : "text-nyx-muted"}`}>
               {formatPrice(product.pricePix)}
             </p>
           </div>
