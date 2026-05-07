@@ -191,7 +191,7 @@ export default async function AdminDashboardPage() {
       <div className="grid lg:grid-cols-[1fr_360px] gap-4">
 
         {/* Card de Produtos */}
-        <Link href="/admin/produtos" className="border border-nyx-line p-5 hover:bg-nyx-cream/10 transition-colors group flex flex-col lg:h-[600px]">
+        <Link href="/admin/produtos" className="border border-nyx-line p-5 hover:bg-nyx-cream/10 transition-colors group flex flex-col lg:h-[684px]">
           <div className="flex items-center justify-between mb-4 shrink-0">
             <p className="label-mono text-[10px] text-nyx-muted">Produtos</p>
             <span className="label-mono text-[9px] text-nyx-soft group-hover:text-nyx-ink transition-colors inline-flex items-center gap-1">
