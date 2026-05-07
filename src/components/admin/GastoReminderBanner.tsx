@@ -102,15 +102,20 @@ export function GastoReminderBanner({ gastos }: Props) {
   function confirmPay() {
     if (!confirming) return;
     const amt = parseFloat(newAmount);
+    const snap = confirming; // capture before async
     startTransition(async () => {
-      await resolveGastoRenewalAction(
-        confirming.gasto.id,
-        amt !== confirming.gasto.amount ? amt : undefined
-      );
-      setResolved((prev) => new Set([...prev, confirming.gasto.id]));
-      // Dismiss the key too so it won't reappear today
-      dismiss(confirming.key);
-      setConfirming(null);
+      try {
+        await resolveGastoRenewalAction(
+          snap.gasto.id,
+          amt !== snap.gasto.amount ? amt : undefined
+        );
+        setResolved((prev) => new Set([...prev, snap.gasto.id]));
+        dismiss(snap.key);
+      } catch {
+        // ignora erro silencioso — modal sempre fecha
+      } finally {
+        setConfirming(null);
+      }
     });
   }
 
@@ -174,7 +179,7 @@ export function GastoReminderBanner({ gastos }: Props) {
       {/* Modal de confirmação */}
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => !pending && setConfirming(null)} />
+          <div className="absolute inset-0 bg-black/60" onClick={() => setConfirming(null)} />
           <div className="relative z-10 w-full max-w-sm bg-nyx-bg border border-nyx-line p-6 space-y-5">
             <div className="flex items-start gap-3">
               <CheckCircle size={20} className="text-emerald-500 shrink-0 mt-0.5" />
