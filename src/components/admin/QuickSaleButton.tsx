@@ -44,6 +44,38 @@ function todayISO() {
   }).split("/").reverse().join("-");
 }
 
+function getItemDisplayPrice(item: OrderItem, payment: PaymentMethod) {
+  return payment === "cartao" ? item.priceCard : item.pricePix;
+}
+
+function firstAvailableColorAndSize(prod: Product): { color?: string; size: string } {
+  if (prod.colors.length > 0) {
+    for (const c of prod.colors) {
+      if (c.soldOut) continue;
+      const availSizes = (c.sizes ?? []).filter((s) => s.quantity > 0);
+      if (availSizes.length > 0) return { color: c.name, size: availSizes[0].size };
+    }
+    // Fallback: first color, first size from aggregate
+    const firstColor = prod.colors[0];
+    const fallbackSize = (prod.sizes ?? []).filter((s) => s.quantity > 0)[0]?.size ?? "UNICO";
+    return { color: firstColor.name, size: fallbackSize };
+  }
+  const fallbackSize = (prod.sizes ?? []).filter((s) => s.quantity > 0)[0]?.size ?? "M";
+  return { size: fallbackSize };
+}
+
+function sizesForColor(prod: Product, color: string | undefined): string[] {
+  if (color) {
+    const colorObj = prod.colors.find((c) => c.name === color);
+    if (colorObj && (colorObj.sizes ?? []).length > 0) {
+      const avail = colorObj.sizes!.filter((s) => s.quantity > 0).map((s) => s.size);
+      if (avail.length > 0) return avail;
+    }
+  }
+  const fromAggregate = (prod.sizes ?? []).filter((s) => s.quantity > 0).map((s) => s.size);
+  return fromAggregate.length > 0 ? fromAggregate : ALL_SIZES;
+}
+
 export function QuickSaleModal({ onClose, products, initialDate }: { onClose: () => void; products: Product[]; initialDate?: string }) {
   const defaultDate = initialDate ?? todayISO();
   const [pending, startTransition] = useTransition();
@@ -56,7 +88,7 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
   const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [stockWarning, setStockWarning] = useState<{ name: string; size: string } | null>(null);
+  const [stockWarning, setStockWarning] = useState<{ name: string; size: string; color?: string } | null>(null);
 
   function addItem() {
     setItems((p) => [...p, emptyItem()]);
@@ -72,21 +104,29 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
 
   function selectProduct(i: number, productId: string) {
     if (productId === "manual") {
-      updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 });
+      updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", color: undefined, pricePix: 0, priceCard: 0 });
       return;
     }
     const prod = products.find((p) => p.id === productId);
     if (!prod) return;
-    const availableSizes = prod.sizes.filter((s) => s.quantity > 0).map((s) => s.size);
-    const firstSize = availableSizes[0] ?? "M";
+    const { color, size } = firstAvailableColorAndSize(prod);
     updateItem(i, {
       productId: prod.id,
       productSlug: prod.slug,
       productName: prod.name,
-      size: firstSize,
+      color,
+      size,
       pricePix: prod.pricePix,
       priceCard: prod.priceCard,
     });
+  }
+
+  function selectColor(i: number, color: string) {
+    const item = items[i];
+    const prod = products.find((p) => p.id === item.productId);
+    if (!prod) return;
+    const avail = sizesForColor(prod, color);
+    updateItem(i, { color, size: avail[0] ?? item.size });
   }
 
   function save() {
@@ -101,10 +141,21 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
       if (item.productId === "manual") continue;
       const prod = products.find((p) => p.id === item.productId);
       if (!prod) continue;
-      const sizeStock = (prod.sizes ?? []).find((s) => s.size === item.size);
-      if (!sizeStock || sizeStock.quantity === 0) {
-        setStockWarning({ name: prod.name, size: item.size });
-        return;
+      if (item.color) {
+        const colorObj = prod.colors.find((c) => c.name === item.color);
+        if (colorObj && (colorObj.sizes ?? []).length > 0) {
+          const sizeStock = colorObj.sizes!.find((s) => s.size === item.size);
+          if (!sizeStock || sizeStock.quantity === 0) {
+            setStockWarning({ name: prod.name, size: item.size, color: item.color });
+            return;
+          }
+        }
+      } else {
+        const sizeStock = (prod.sizes ?? []).find((s) => s.size === item.size);
+        if (!sizeStock || sizeStock.quantity === 0) {
+          setStockWarning({ name: prod.name, size: item.size });
+          return;
+        }
       }
     }
 
@@ -115,7 +166,7 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
     });
   }
 
-  const total = items.reduce((s, i) => s + (i.pricePix || 0), 0);
+  const total = items.reduce((s, i) => s + (getItemDisplayPrice(i, payment) || 0), 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -136,7 +187,9 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
                 <div>
                   <p className="text-sm font-medium text-nyx-ink">Estoque insuficiente</p>
                   <p className="text-xs text-nyx-muted mt-1">
-                    <strong>{stockWarning.name}</strong> (tam. {SIZE_LABELS[stockWarning.size as keyof typeof SIZE_LABELS] ?? stockWarning.size}) está sem estoque disponível.
+                    <strong>{stockWarning.name}</strong>
+                    {stockWarning.color && <> · {stockWarning.color}</>}
+                    {" "}(tam. {SIZE_LABELS[stockWarning.size as keyof typeof SIZE_LABELS] ?? stockWarning.size}) está sem estoque disponível.
                   </p>
                   <p className="text-xs text-nyx-muted mt-2">
                     Acesse <strong>Produtos → Editar</strong> para adicionar unidades e tente novamente.
@@ -218,14 +271,16 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
               <div className="space-y-3">
                 {items.map((item, i) => {
                   const selectedProd = products.find((p) => p.id === item.productId);
-                  const availableSizes = selectedProd
-                    ? selectedProd.sizes.filter((s) => s.quantity > 0).map((s) => s.size)
-                    : ALL_SIZES;
+                  const hasColors = selectedProd && selectedProd.colors.length > 0;
+                  const availColors = hasColors
+                    ? selectedProd.colors.filter((c) => !c.soldOut)
+                    : [];
+                  const avail = selectedProd ? sizesForColor(selectedProd, item.color) : ALL_SIZES;
+                  const displayPrice = getItemDisplayPrice(item, payment);
 
                   return (
                     <div key={i} className="border border-nyx-line p-3 space-y-2">
                       <div className="flex items-center gap-2">
-                        {/* Product select */}
                         {products.length > 0 ? (
                           <select
                             className="input-nyx text-xs flex-1"
@@ -252,7 +307,6 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
                         )}
                       </div>
 
-                      {/* Manual name override when "manual" is selected */}
                       {item.productId === "manual" && products.length > 0 && (
                         <input
                           className="input-nyx text-xs"
@@ -260,6 +314,21 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
                           value={item.productName}
                           onChange={(e) => updateItem(i, { productName: e.target.value })}
                         />
+                      )}
+
+                      {hasColors && availColors.length > 0 && (
+                        <div>
+                          <label className="label-mono text-[9px] text-nyx-muted block mb-1">Cor</label>
+                          <select
+                            className="input-nyx text-xs"
+                            value={item.color ?? ""}
+                            onChange={(e) => selectColor(i, e.target.value)}
+                          >
+                            {availColors.map((c) => (
+                              <option key={c.name} value={c.name}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
                       )}
 
                       <div className="grid grid-cols-2 gap-2">
@@ -270,21 +339,24 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
                             value={item.size}
                             onChange={(e) => updateItem(i, { size: e.target.value })}
                           >
-                            {availableSizes.map((s) => <option key={s} value={s}>{SIZE_LABELS[s as keyof typeof SIZE_LABELS] ?? s}</option>)}
+                            {avail.map((s) => <option key={s} value={s}>{SIZE_LABELS[s as keyof typeof SIZE_LABELS] ?? s}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="label-mono text-[9px] text-nyx-muted block mb-1">Valor (R$) *</label>
+                          <label className="label-mono text-[9px] text-nyx-muted block mb-1">
+                            Valor (R$) {payment === "cartao" ? "· Cartão" : "· Pix"} *
+                          </label>
                           <input
                             className="input-nyx text-xs"
                             type="number"
                             min="0"
                             step="0.01"
                             placeholder="0,00"
-                            value={item.pricePix || ""}
+                            value={displayPrice || ""}
                             onChange={(e) => {
                               const v = parseFloat(e.target.value) || 0;
-                              updateItem(i, { pricePix: v, priceCard: v });
+                              if (payment === "cartao") updateItem(i, { priceCard: v, pricePix: item.pricePix || v });
+                              else updateItem(i, { pricePix: v, priceCard: item.priceCard || v });
                             }}
                           />
                         </div>

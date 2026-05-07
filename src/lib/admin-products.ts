@@ -194,15 +194,25 @@ function spDate(ts: number): string {
  * Uses a Firestore transaction per product to avoid race conditions.
  */
 export async function adminAdjustStock(
-  items: Array<{ productId: string; size: string }>,
+  items: Array<{ productId: string; size: string; color?: string }>,
   delta: -1 | 1,
   meta?: StockAdjustMeta
 ): Promise<void> {
-  const byProduct: Record<string, Record<string, number>> = {};
+  // Group by product, tracking color-specific and aggregate changes
+  const byProduct: Record<string, {
+    allSizes: Record<string, number>;
+    colorSizes: Record<string, Record<string, number>>;
+  }> = {};
+
   for (const item of items) {
     if (item.productId === "manual") continue;
-    byProduct[item.productId] ??= {};
-    byProduct[item.productId][item.size] = (byProduct[item.productId][item.size] ?? 0) + 1;
+    byProduct[item.productId] ??= { allSizes: {}, colorSizes: {} };
+    const prod = byProduct[item.productId];
+    prod.allSizes[item.size] = (prod.allSizes[item.size] ?? 0) + 1;
+    if (item.color) {
+      prod.colorSizes[item.color] ??= {};
+      prod.colorSizes[item.color][item.size] = (prod.colorSizes[item.color][item.size] ?? 0) + 1;
+    }
   }
 
   const db = adminDb();
@@ -213,7 +223,7 @@ export async function adminAdjustStock(
   const now = Date.now();
   const date = spDate(now);
 
-  const movements: Array<{ productId: string; productName: string; size: string; delta: number }> = [];
+  const movements: Array<{ productId: string; productName: string; size: string; delta: number; color?: string }> = [];
 
   await db.runTransaction(async (tx) => {
     // 1. ALL reads first
@@ -228,31 +238,49 @@ export async function adminAdjustStock(
 
       const productName: string = doc.data()?.name ?? productId;
       const sizes: Array<{ size: string; quantity: number }> = doc.data()?.sizes ?? [];
-      const sizeDelta = byProduct[productId];
+      const colors: ColorStock[] = doc.data()?.colors ?? [];
+      const prodData = byProduct[productId];
 
+      // Update aggregate sizes
       const updatedSizes = sizes.map((s) => {
-        const change = sizeDelta[s.size] ?? 0;
+        const change = prodData.allSizes[s.size] ?? 0;
         if (change === 0) return s;
         const newQty = delta > 0 ? s.quantity + change : Math.max(0, s.quantity - change);
         return { ...s, quantity: newQty };
       });
 
-      tx.update(refs[i], { sizes: updatedSizes, updatedAt: now });
+      // Update per-color sizes
+      const updatedColors = colors.map((c) => {
+        const colorMap = prodData.colorSizes[c.name];
+        if (!colorMap) return c;
+        const cs: SizeStock[] = (c.sizes ?? []) as SizeStock[];
+        const updatedCs = cs.map((s) => {
+          const change = colorMap[s.size] ?? 0;
+          if (change === 0) return s;
+          const newQty = delta > 0 ? s.quantity + change : Math.max(0, s.quantity - change);
+          return { ...s, quantity: newQty };
+        });
+        return { ...c, sizes: updatedCs };
+      });
 
-      for (const [size, count] of Object.entries(sizeDelta)) {
-        movements.push({ productId, productName, size, delta: delta * count });
+      tx.update(refs[i], { sizes: updatedSizes, colors: updatedColors, updatedAt: now });
+
+      for (const [size, count] of Object.entries(prodData.allSizes)) {
+        const color = Object.entries(prodData.colorSizes).find(([, sm]) => sm[size])?.[0];
+        movements.push({ productId, productName, size, delta: delta * count, color });
       }
     }
   });
 
   // Write movement logs outside the transaction for reliability
-  await Promise.all(movements.map(({ productId, productName, size, delta: d }) => {
+  await Promise.all(movements.map(({ productId, productName, size, delta: d, color }) => {
     const movement: Record<string, unknown> = {
       productId, productName, size, delta: d,
       type: movType, date, createdAt: now,
     };
     if (meta?.orderId) movement.orderId = meta.orderId;
     if (meta?.notes) movement.notes = meta.notes;
+    if (color) movement.color = color;
     return db.collection("stockMovements").add(movement);
   }));
 }

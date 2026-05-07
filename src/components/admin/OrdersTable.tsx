@@ -42,6 +42,36 @@ function whatsappConfirmUrl(order: Order): string {
 
 const ALL_SIZES = ["PP", "P", "M", "G", "GG", "UNICO"];
 
+function firstAvailableColorAndSize(prod: Product): { color?: string; size: string } {
+  if (prod.colors.length > 0) {
+    for (const c of prod.colors) {
+      if (c.soldOut) continue;
+      const avail = (c.sizes ?? []).filter((s) => s.quantity > 0);
+      if (avail.length > 0) return { color: c.name, size: avail[0].size };
+    }
+    const fallbackSize = (prod.sizes ?? []).filter((s) => s.quantity > 0)[0]?.size ?? "UNICO";
+    return { color: prod.colors[0].name, size: fallbackSize };
+  }
+  const fallbackSize = (prod.sizes ?? []).filter((s) => s.quantity > 0)[0]?.size ?? "M";
+  return { size: fallbackSize };
+}
+
+function sizesForColor(prod: Product, color: string | undefined): string[] {
+  if (color) {
+    const colorObj = prod.colors.find((c) => c.name === color);
+    if (colorObj && (colorObj.sizes ?? []).length > 0) {
+      const avail = colorObj.sizes!.filter((s) => s.quantity > 0).map((s) => s.size);
+      if (avail.length > 0) return avail;
+    }
+  }
+  const fromAggregate = (prod.sizes ?? []).filter((s) => s.quantity > 0).map((s) => s.size);
+  return fromAggregate.length > 0 ? fromAggregate : ALL_SIZES;
+}
+
+function itemDisplayPrice(item: OrderItem, payment: PaymentMethod) {
+  return payment === "cartao" ? item.priceCard : item.pricePix;
+}
+
 interface Props {
   orders: Order[];
   products?: Product[];
@@ -324,11 +354,19 @@ function EditOrderModal({
   }
 
   function selectProduct(i: number, productId: string) {
-    if (productId === "manual") { updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 }); return; }
+    if (productId === "manual") { updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", color: undefined, pricePix: 0, priceCard: 0 }); return; }
     const prod = products.find((p) => p.id === productId);
     if (!prod) return;
-    const firstSize = prod.sizes.filter((s) => s.quantity > 0)[0]?.size ?? "M";
-    updateItem(i, { productId: prod.id, productSlug: prod.slug, productName: prod.name, size: firstSize, pricePix: prod.pricePix, priceCard: prod.priceCard });
+    const { color, size } = firstAvailableColorAndSize(prod);
+    updateItem(i, { productId: prod.id, productSlug: prod.slug, productName: prod.name, color, size, pricePix: prod.pricePix, priceCard: prod.priceCard });
+  }
+
+  function selectColor(i: number, color: string) {
+    const item = items[i];
+    const prod = products.find((p) => p.id === item.productId);
+    if (!prod) return;
+    const avail = sizesForColor(prod, color);
+    updateItem(i, { color, size: avail[0] ?? item.size });
   }
 
   function save() {
@@ -342,6 +380,8 @@ function EditOrderModal({
       else setError((res as { ok: false; error: string }).error);
     });
   }
+
+  const total = items.reduce((s, i) => s + (itemDisplayPrice(i, payment) || 0), 0);
 
   return (
     <Modal title="Editar pedido" onClose={onClose}>
@@ -375,7 +415,10 @@ function EditOrderModal({
           <div className="space-y-3">
             {items.map((item, i) => {
               const selProd = products.find((p) => p.id === item.productId);
-              const availSizes = selProd ? selProd.sizes.filter((s) => s.quantity > 0).map((s) => s.size) : ALL_SIZES;
+              const hasColors = selProd && selProd.colors.length > 0;
+              const availColors = hasColors ? selProd.colors.filter((c) => !c.soldOut) : [];
+              const avail = selProd ? sizesForColor(selProd, item.color) : ALL_SIZES;
+              const displayPrice = itemDisplayPrice(item, payment);
               return (
                 <div key={i} className="border border-nyx-line p-3 space-y-2">
                   <div className="flex gap-2">
@@ -392,22 +435,41 @@ function EditOrderModal({
                   {item.productId === "manual" && products.length > 0 && (
                     <input className="input-nyx text-xs" placeholder="Nome do produto" value={item.productName} onChange={(e) => updateItem(i, { productName: e.target.value })} />
                   )}
+                  {hasColors && availColors.length > 0 && (
+                    <div>
+                      <label className="label-mono text-[9px] text-nyx-muted block mb-1">Cor</label>
+                      <select className="input-nyx text-xs" value={item.color ?? ""} onChange={(e) => selectColor(i, e.target.value)}>
+                        {availColors.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="label-mono text-[9px] text-nyx-muted block mb-1">Tamanho</label>
                       <select className="input-nyx text-xs" value={item.size} onChange={(e) => updateItem(i, { size: e.target.value })}>
-                        {availSizes.map((s) => <option key={s} value={s}>{SIZE_LABELS[s as keyof typeof SIZE_LABELS] ?? s}</option>)}
+                        {avail.map((s) => <option key={s} value={s}>{SIZE_LABELS[s as keyof typeof SIZE_LABELS] ?? s}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="label-mono text-[9px] text-nyx-muted block mb-1">Valor (R$)</label>
-                      <input className="input-nyx text-xs" type="number" placeholder="0,00" value={item.pricePix || ""} onChange={(e) => { const v = parseFloat(e.target.value) || 0; updateItem(i, { pricePix: v, priceCard: v }); }} />
+                      <label className="label-mono text-[9px] text-nyx-muted block mb-1">
+                        Valor (R$) {payment === "cartao" ? "· Cartão" : "· Pix"}
+                      </label>
+                      <input className="input-nyx text-xs" type="number" placeholder="0,00" value={displayPrice || ""}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value) || 0;
+                          if (payment === "cartao") updateItem(i, { priceCard: v, pricePix: item.pricePix || v });
+                          else updateItem(i, { pricePix: v, priceCard: item.priceCard || v });
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
+          {total > 0 && (
+            <p className="mt-2 text-sm text-right text-nyx-ink">Total: <strong>{formatPrice(total)}</strong></p>
+          )}
         </div>
 
         {error && <p className="text-xs text-red-500">{error}</p>}
@@ -447,11 +509,19 @@ function ManualOrderModal({ onClose, products }: { onClose: () => void; products
   }
 
   function selectProduct(i: number, productId: string) {
-    if (productId === "manual") { updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", pricePix: 0, priceCard: 0 }); return; }
+    if (productId === "manual") { updateItem(i, { productId: "manual", productSlug: "manual", productName: "", size: "M", color: undefined, pricePix: 0, priceCard: 0 }); return; }
     const prod = products.find((p) => p.id === productId);
     if (!prod) return;
-    const firstSize = prod.sizes.filter((s) => s.quantity > 0)[0]?.size ?? "M";
-    updateItem(i, { productId: prod.id, productSlug: prod.slug, productName: prod.name, size: firstSize, pricePix: prod.pricePix, priceCard: prod.priceCard });
+    const { color, size } = firstAvailableColorAndSize(prod);
+    updateItem(i, { productId: prod.id, productSlug: prod.slug, productName: prod.name, color, size, pricePix: prod.pricePix, priceCard: prod.priceCard });
+  }
+
+  function selectColor(i: number, color: string) {
+    const item = items[i];
+    const prod = products.find((p) => p.id === item.productId);
+    if (!prod) return;
+    const avail = sizesForColor(prod, color);
+    updateItem(i, { color, size: avail[0] ?? item.size });
   }
 
   function save() {
@@ -467,7 +537,7 @@ function ManualOrderModal({ onClose, products }: { onClose: () => void; products
     });
   }
 
-  const total = items.reduce((s, i) => s + (i.pricePix || 0), 0);
+  const total = items.reduce((s, i) => s + (itemDisplayPrice(i, payment) || 0), 0);
 
   return (
     <Modal title="Nova venda manual" onClose={onClose}>
@@ -503,7 +573,10 @@ function ManualOrderModal({ onClose, products }: { onClose: () => void; products
             <div className="space-y-3">
               {items.map((item, i) => {
                 const selProd = products.find((p) => p.id === item.productId);
-                const availSizes = selProd ? selProd.sizes.filter((s) => s.quantity > 0).map((s) => s.size) : ALL_SIZES;
+                const hasColors = selProd && selProd.colors.length > 0;
+                const availColors = hasColors ? selProd.colors.filter((c) => !c.soldOut) : [];
+                const avail = selProd ? sizesForColor(selProd, item.color) : ALL_SIZES;
+                const displayPrice = itemDisplayPrice(item, payment);
                 return (
                   <div key={i} className="border border-nyx-line p-3 space-y-2">
                     <div className="flex gap-2">
@@ -522,16 +595,32 @@ function ManualOrderModal({ onClose, products }: { onClose: () => void; products
                     {item.productId === "manual" && products.length > 0 && (
                       <input className="input-nyx text-xs" placeholder="Nome do produto" value={item.productName} onChange={(e) => updateItem(i, { productName: e.target.value })} />
                     )}
+                    {hasColors && availColors.length > 0 && (
+                      <div>
+                        <label className="label-mono text-[9px] text-nyx-muted block mb-1">Cor</label>
+                        <select className="input-nyx text-xs" value={item.color ?? ""} onChange={(e) => selectColor(i, e.target.value)}>
+                          {availColors.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                        </select>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="label-mono text-[9px] text-nyx-muted block mb-1">Tamanho</label>
                         <select className="input-nyx text-xs" value={item.size} onChange={(e) => updateItem(i, { size: e.target.value })}>
-                          {availSizes.map((s) => <option key={s}>{s}</option>)}
+                          {avail.map((s) => <option key={s} value={s}>{SIZE_LABELS[s as keyof typeof SIZE_LABELS] ?? s}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="label-mono text-[9px] text-nyx-muted block mb-1">Valor (R$) *</label>
-                        <input className="input-nyx text-xs" type="number" min="0" step="0.01" placeholder="0,00" value={item.pricePix || ""} onChange={(e) => { const v = parseFloat(e.target.value) || 0; updateItem(i, { pricePix: v, priceCard: v }); }} />
+                        <label className="label-mono text-[9px] text-nyx-muted block mb-1">
+                          Valor (R$) {payment === "cartao" ? "· Cartão" : "· Pix"} *
+                        </label>
+                        <input className="input-nyx text-xs" type="number" min="0" step="0.01" placeholder="0,00" value={displayPrice || ""}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value) || 0;
+                            if (payment === "cartao") updateItem(i, { priceCard: v, pricePix: item.pricePix || v });
+                            else updateItem(i, { pricePix: v, priceCard: item.priceCard || v });
+                          }}
+                        />
                       </div>
                     </div>
                   </div>

@@ -35,7 +35,7 @@ export async function setOrderStatusAction(
   const order = await adminGetOrder(id);
   if (!order) return { ok: false, error: "Pedido não encontrado." };
 
-  const stockItems = order.items.map((i) => ({ productId: i.productId, size: i.size }));
+  const stockItems = order.items.map((i) => ({ productId: i.productId, size: i.size, color: i.color }));
 
   if (status === "completed" && order.status !== "completed" && !order.stockDeducted) {
     await adminAdjustStock(stockItems, -1, { type: "venda", orderId: id });
@@ -96,7 +96,7 @@ export async function createManualOrderAction(data: {
     });
 
     if (data.createAsCompleted) {
-      const stockItems = data.items.map((i) => ({ productId: i.productId, size: i.size }));
+      const stockItems = data.items.map((i) => ({ productId: i.productId, size: i.size, color: i.color }));
       await adminAdjustStock(stockItems, -1, { type: "venda" });
       await adminSetOrderStatus(id, "completed", { stockDeducted: true });
 
@@ -168,7 +168,7 @@ export async function deleteOrderAction(orderId: string): Promise<ActionResult> 
   // Restore stock if this was a completed order with stock deducted
   const order = await adminGetOrder(orderId);
   if (order?.status === "completed" && order.stockDeducted) {
-    const stockItems = order.items.map((i) => ({ productId: i.productId, size: i.size }));
+    const stockItems = order.items.map((i) => ({ productId: i.productId, size: i.size, color: i.color }));
     await adminAdjustStock(stockItems, 1, { type: "devolucao", orderId: orderId });
   }
 
