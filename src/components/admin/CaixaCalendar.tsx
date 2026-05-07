@@ -108,17 +108,24 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
     return m;
   }, [openOrders]);
 
-  const { gastosByDate, gastosAmtByDate } = useMemo(() => {
+  const { gastosByDate, gastosAmtByDate, gastosDueByDate } = useMemo(() => {
     const byDate = new Map<string, Gasto[]>();
     const amtByDate = new Map<string, number>();
+    const dueByDate = new Map<string, Gasto[]>(); // futuros: vencimentos
     for (const g of localGastos) {
-      if (!g.date) continue;
-      const arr = byDate.get(g.date) ?? [];
-      arr.push(g);
-      byDate.set(g.date, arr);
-      amtByDate.set(g.date, (amtByDate.get(g.date) ?? 0) + g.amount);
+      if (g.date) {
+        const arr = byDate.get(g.date) ?? [];
+        arr.push(g);
+        byDate.set(g.date, arr);
+        amtByDate.set(g.date, (amtByDate.get(g.date) ?? 0) + g.amount);
+      }
+      if (g.dueDate && g.active) {
+        const arr = dueByDate.get(g.dueDate) ?? [];
+        arr.push(g);
+        dueByDate.set(g.dueDate, arr);
+      }
     }
-    return { gastosByDate: byDate, gastosAmtByDate: amtByDate };
+    return { gastosByDate: byDate, gastosAmtByDate: amtByDate, gastosDueByDate: dueByDate };
   }, [localGastos]);
 
   const cells = useMemo(() => buildMonthCells(viewYear, viewMonth), [viewYear, viewMonth]);
@@ -170,6 +177,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
   const selCaixa = caixaByDate.get(selectedDate);
   const selOpen = openByDate.get(selectedDate) ?? [];
   const selGastos = gastosByDate.get(selectedDate) ?? [];
+  const selDue = isFinanceiro ? (gastosDueByDate.get(selectedDate) ?? []) : [];
   const isFutureDay = selectedDate > today;
   const hasActivity = !!(selCaixa || selOpen.length > 0);
 
@@ -316,6 +324,23 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
           </div>
         )}
 
+        {/* Vencimentos futuros (modo financeiro) */}
+        {selDue.length > 0 && (
+          <div className={`pt-3 ${selGastos.length > 0 ? "" : "border-t border-nyx-line/50"}`}>
+            <p className="label-mono text-[9px] text-amber-500/80 mb-2 flex items-center gap-1">
+              <span>🔔</span> Vencimento{selDue.length > 1 ? "s" : ""} neste dia
+            </p>
+            <div className="space-y-1.5">
+              {selDue.map((g) => (
+                <div key={g.id} className="flex items-center justify-between text-xs">
+                  <span className="text-nyx-muted truncate">{g.description}</span>
+                  <span className="text-amber-400 shrink-0 ml-2 tabular-nums">{formatPrice(g.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Gastos do dia */}
         {selGastos.length > 0 && (
           <div className="pt-3 border-t border-nyx-line/50">
@@ -361,6 +386,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
             const hasCaixa = caixaByDate.has(iso);
             const hasOpen = openByDate.has(iso);
             const hasGasto = gastosByDate.has(iso);
+            const hasDue = isFinanceiro && gastosDueByDate.has(iso);
             const isToday = iso === today;
             const isFuture = iso > today;
             const isSelected = iso === selectedDate;
@@ -380,10 +406,12 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                     ? "border-red-400/30 hover:border-red-400/60 cursor-pointer"
                     : hasOpen
                     ? "border-amber-400/50 hover:border-amber-400 cursor-pointer"
+                    : hasDue
+                    ? "border-amber-500/40 hover:border-amber-500/70 cursor-pointer"
                     : isToday
                     ? "border-nyx-muted/50 hover:border-nyx-muted cursor-pointer"
                     : isFuture
-                    ? "border-transparent opacity-25 cursor-default"
+                    ? "border-transparent opacity-20 cursor-default"
                     : "border-transparent hover:border-nyx-line/50 cursor-pointer opacity-50"
                 : hasCaixa
                 ? "border-nyx-line hover:border-nyx-muted cursor-pointer"
@@ -399,7 +427,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
               <button
                 key={iso}
                 onClick={() => selectDate(iso)}
-                disabled={isFuture && !hasCaixa && !hasOpen}
+                disabled={isFuture && !hasCaixa && !hasOpen && !hasDue}
                 className={`relative flex flex-col items-center justify-center min-h-[48px] px-0.5 py-1.5 border transition-all overflow-hidden ${borderCls}`}
               >
                 <span className={`label-mono text-[11px] ${isSelected ? "text-nyx-bg" : "text-nyx-ink"}`}>
@@ -421,10 +449,16 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                         -{compactPrice(dayGastoAmt)}
                       </span>
                     )}
+                    {!hasCaixa && !hasGasto && hasDue && (
+                      <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${isSelected ? "text-nyx-bg/70" : "text-amber-500/80"}`}>
+                        venc.
+                      </span>
+                    )}
                     {/* Mobile: dots */}
                     {hasCaixa && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-nyx-bg/60" : net >= 0 ? "bg-emerald-400" : "bg-red-400"}`} />}
                     {!hasCaixa && hasOpen && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-400"}`} />}
                     {!hasCaixa && !hasOpen && hasGasto && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-red-300" : "bg-red-400/70"}`} />}
+                    {!hasCaixa && !hasOpen && !hasGasto && hasDue && <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-500/60"}`} />}
                   </>
                 ) : (
                   <>
@@ -463,6 +497,10 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 border border-amber-400/50" />
                 <span className="label-mono text-[9px] text-nyx-muted">Pendente / aberto</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 border border-amber-500/40" />
+                <span className="label-mono text-[9px] text-nyx-muted">Vencimento de gasto</span>
               </div>
             </>
           ) : (
