@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, X, Trash2, CheckCircle } from "lucide-react";
+import { Plus, X, Trash2, CheckCircle, AlertTriangle } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { createManualOrderAction } from "@/app/admin/(protected)/pedidos/actions";
 import type { OrderItem } from "@/lib/admin-orders";
@@ -56,6 +56,7 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
   const [items, setItems] = useState<OrderItem[]>([emptyItem()]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [stockWarning, setStockWarning] = useState<{ name: string; size: string } | null>(null);
 
   function addItem() {
     setItems((p) => [...p, emptyItem()]);
@@ -94,6 +95,19 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
     if (items.some((it) => !it.productName.trim() || it.pricePix <= 0)) {
       setError("Preencha nome e valor de todos os itens."); return;
     }
+
+    // Verificar estoque para produtos do catálogo
+    for (const item of items) {
+      if (item.productId === "manual") continue;
+      const prod = products.find((p) => p.id === item.productId);
+      if (!prod) continue;
+      const sizeStock = (prod.sizes ?? []).find((s) => s.size === item.size);
+      if (!sizeStock || sizeStock.quantity === 0) {
+        setStockWarning({ name: prod.name, size: item.size });
+        return;
+      }
+    }
+
     startTransition(async () => {
       const res = await createManualOrderAction({ customerName: name.trim(), customerPhone: phone.trim(), paymentMethod: payment, notes: notes.trim(), items, saleDate, createAsCompleted: alreadyDone });
       if (res.ok) { setSuccess(true); setTimeout(onClose, 1500); }
@@ -111,6 +125,34 @@ export function QuickSaleModal({ onClose, products, initialDate }: { onClose: ()
           <h2 className="heading-display text-xl">Nova venda</h2>
           <button onClick={onClose} className="text-nyx-muted hover:text-nyx-ink"><X size={18} /></button>
         </div>
+
+        {/* Modal de aviso de estoque */}
+        {stockWarning && (
+          <div className="fixed inset-0 z-10 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setStockWarning(null)} />
+            <div className="relative z-10 w-full max-w-sm bg-nyx-bg border border-amber-400 p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={20} className="text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-nyx-ink">Estoque insuficiente</p>
+                  <p className="text-xs text-nyx-muted mt-1">
+                    <strong>{stockWarning.name}</strong> (tam. {SIZE_LABELS[stockWarning.size as keyof typeof SIZE_LABELS] ?? stockWarning.size}) está sem estoque disponível.
+                  </p>
+                  <p className="text-xs text-nyx-muted mt-2">
+                    Acesse <strong>Produtos → Editar</strong> para adicionar unidades e tente novamente.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStockWarning(null)}
+                className="w-full label-mono text-xs px-4 py-2 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors"
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        )}
 
         {success ? (
           <div className="py-8 text-center">
