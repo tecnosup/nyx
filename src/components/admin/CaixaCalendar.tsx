@@ -327,7 +327,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
         {/* Vencimentos futuros (modo financeiro) */}
         {selDue.length > 0 && (
           <div className={`pt-3 ${selGastos.length > 0 ? "" : "border-t border-nyx-line/50"}`}>
-            <p className="label-mono text-[9px] text-amber-500/80 mb-2 flex items-center gap-1">
+            <p className="label-mono text-[9px] text-orange-400 mb-2 flex items-center gap-1">
               <span>🔔</span> Vencimento{selDue.length > 1 ? "s" : ""} neste dia
             </p>
             <div className="space-y-1.5">
@@ -407,7 +407,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                     : hasOpen
                     ? "border-amber-400/50 hover:border-amber-400 cursor-pointer"
                     : hasDue
-                    ? "border-amber-500/40 hover:border-amber-500/70 cursor-pointer"
+                    ? "border-orange-500/50 hover:border-orange-500/80 cursor-pointer"
                     : isToday
                     ? "border-nyx-muted/50 hover:border-nyx-muted cursor-pointer"
                     : isFuture
@@ -450,7 +450,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                       </span>
                     )}
                     {!hasCaixa && !hasGasto && hasDue && (
-                      <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${isSelected ? "text-nyx-bg/70" : "text-amber-500/80"}`}>
+                      <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${isSelected ? "text-nyx-bg/70" : "text-orange-400"}`}>
                         venc.
                       </span>
                     )}
@@ -458,7 +458,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                     {hasCaixa && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-nyx-bg/60" : net >= 0 ? "bg-emerald-400" : "bg-red-400"}`} />}
                     {!hasCaixa && hasOpen && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-400"}`} />}
                     {!hasCaixa && !hasOpen && hasGasto && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-red-300" : "bg-red-400/70"}`} />}
-                    {!hasCaixa && !hasOpen && !hasGasto && hasDue && <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-500/60"}`} />}
+                    {!hasCaixa && !hasOpen && !hasGasto && hasDue && <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-orange-300" : "bg-orange-400/80"}`} />}
                   </>
                 ) : (
                   <>
@@ -499,7 +499,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                 <span className="label-mono text-[9px] text-nyx-muted">Pendente / aberto</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 border border-amber-500/40" />
+                <div className="w-3 h-3 border border-orange-500/50" />
                 <span className="label-mono text-[9px] text-nyx-muted">Vencimento de gasto</span>
               </div>
             </>
