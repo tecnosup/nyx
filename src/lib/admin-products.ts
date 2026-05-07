@@ -216,9 +216,14 @@ export async function adminAdjustStock(
   const movements: Array<{ productId: string; productName: string; size: string; delta: number }> = [];
 
   await db.runTransaction(async (tx) => {
-    for (const productId of productIds) {
-      const ref = db.collection(COLLECTION).doc(productId);
-      const doc = await tx.get(ref);
+    // 1. ALL reads first
+    const refs = productIds.map((id) => db.collection(COLLECTION).doc(id));
+    const docs = await Promise.all(refs.map((ref) => tx.get(ref)));
+
+    // 2. THEN all writes
+    for (let i = 0; i < productIds.length; i++) {
+      const productId = productIds[i];
+      const doc = docs[i];
       if (!doc.exists) continue;
 
       const productName: string = doc.data()?.name ?? productId;
@@ -232,9 +237,8 @@ export async function adminAdjustStock(
         return { ...s, quantity: newQty };
       });
 
-      tx.update(ref, { sizes: updatedSizes, updatedAt: now });
+      tx.update(refs[i], { sizes: updatedSizes, updatedAt: now });
 
-      // Collect movements to write after transaction
       for (const [size, count] of Object.entries(sizeDelta)) {
         movements.push({ productId, productName, size, delta: delta * count });
       }
