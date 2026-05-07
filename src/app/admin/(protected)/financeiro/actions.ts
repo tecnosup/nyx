@@ -6,11 +6,13 @@ import {
   adminCreateGasto,
   adminUpdateGasto,
   adminDeleteGasto,
+  adminResolveGastoRenewal,
   adminCreateGastoCategory,
   adminUpdateGastoCategory,
   adminDeleteGastoCategory,
   type GastoCategory,
   type GastoFrequency,
+  type Gasto,
 } from "@/lib/admin-gastos";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -24,21 +26,42 @@ export async function createGastoAction(data: {
   amount: number;
   frequency: GastoFrequency;
   category: GastoCategory;
-}): Promise<ActionResult> {
+  date?: string;
+  remindRenewal?: boolean;
+  dueDate?: string;
+}): Promise<ActionResult & { gasto?: Gasto }> {
   try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
   if (!data.description.trim()) return { ok: false, error: "Descrição obrigatória." };
   if (data.amount <= 0) return { ok: false, error: "Valor deve ser maior que zero." };
-  await adminCreateGasto({ ...data, description: data.description.trim() });
+  const id = await adminCreateGasto({ ...data, description: data.description.trim() });
   revalidate();
-  return { ok: true };
+  const now = Date.now();
+  const gasto: Gasto = {
+    id, description: data.description.trim(), amount: data.amount,
+    frequency: data.frequency, category: data.category, active: true,
+    date: data.date, remindRenewal: data.remindRenewal, dueDate: data.dueDate,
+    createdAt: now, updatedAt: now,
+  };
+  return { ok: true, gasto };
 }
 
 export async function updateGastoAction(
   id: string,
-  updates: { description?: string; amount?: number; frequency?: GastoFrequency; category?: GastoCategory; active?: boolean }
+  updates: {
+    description?: string; amount?: number; frequency?: GastoFrequency;
+    category?: GastoCategory; active?: boolean;
+    date?: string; remindRenewal?: boolean; dueDate?: string;
+  }
 ): Promise<ActionResult> {
   try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
   await adminUpdateGasto(id, updates);
+  revalidate();
+  return { ok: true };
+}
+
+export async function resolveGastoRenewalAction(id: string, newAmount?: number): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+  await adminResolveGastoRenewal(id, newAmount);
   revalidate();
   return { ok: true };
 }

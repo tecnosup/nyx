@@ -1,6 +1,7 @@
 import { adminListOrders } from "@/lib/admin-orders";
 import { adminListCaixas } from "@/lib/admin-caixa";
 import { listProducts } from "@/lib/products";
+import { adminListGastos } from "@/lib/admin-gastos";
 import { OrdersTable } from "@/components/admin/OrdersTable";
 import { CaixaSection } from "@/components/admin/CaixaSection";
 import { formatPrice } from "@/lib/utils";
@@ -8,10 +9,11 @@ import { formatPrice } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function PedidosPage() {
-  const [orders, caixas, products] = await Promise.all([
+  const [orders, caixas, products, gastos] = await Promise.all([
     adminListOrders(200),
     adminListCaixas(30),
     listProducts(),
+    adminListGastos().catch(() => []),
   ]);
 
   const pending = orders.filter((o) => o.status === "pending").length;
@@ -65,7 +67,7 @@ export default async function PedidosPage() {
         )}
       </div>
 
-      <CaixaSection caixas={caixas} pendingCount={pendingCaixa} openOrders={openCaixaOrders} products={products} />
+      <CaixaSection caixas={caixas} pendingCount={pendingCaixa} openOrders={openCaixaOrders} products={products} gastos={gastos} />
     </div>
   );
 }
