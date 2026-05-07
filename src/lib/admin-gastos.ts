@@ -113,6 +113,32 @@ export async function adminUpdateGasto(
     .update({ ...updates, updatedAt: Date.now() });
 }
 
+export function nextDueDate(dueDate: string, frequency: GastoFrequency): string {
+  const [y, m, d] = dueDate.split("-").map(Number);
+  if (frequency === "semanal") {
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + 7);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+  // mensal (default)
+  let nm = m + 1, ny = y;
+  if (nm > 12) { nm = 1; ny++; }
+  return `${ny}-${String(nm).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+export async function adminResolveGastoRenewal(id: string, newAmount?: number): Promise<void> {
+  const db = adminDb();
+  const doc = await db.collection(COLLECTION).doc(id).get();
+  if (!doc.exists) return;
+  const data = doc.data()!;
+  const frequency: GastoFrequency = data.frequency ?? "mensal";
+  const currentDue: string = data.dueDate ?? "";
+  const updates: Record<string, unknown> = { updatedAt: Date.now() };
+  if (currentDue) updates.dueDate = nextDueDate(currentDue, frequency);
+  if (newAmount && newAmount > 0) updates.amount = newAmount;
+  await db.collection(COLLECTION).doc(id).update(updates);
+}
+
 export async function adminDeleteGasto(id: string): Promise<void> {
   await adminDb().collection(COLLECTION).doc(id).delete();
 }

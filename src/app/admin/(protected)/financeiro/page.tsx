@@ -1,11 +1,13 @@
 import { adminListGastos, adminGastoStats, adminListGastoCategories } from "@/lib/admin-gastos";
 import { adminListCaixas } from "@/lib/admin-caixa";
-import { adminOrderStats } from "@/lib/admin-orders";
+import { adminListOrders, adminOrderStats } from "@/lib/admin-orders";
+import { listProducts } from "@/lib/products";
 import { formatPrice } from "@/lib/utils";
 import { GastosManager } from "@/components/admin/GastosManager";
 import { FinanceiroCharts } from "@/components/admin/FinanceiroCharts";
 import { DashboardChart } from "@/components/admin/DashboardChart";
 import { GastoReminderBanner } from "@/components/admin/GastoReminderBanner";
+import { CaixaSection } from "@/components/admin/CaixaSection";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +19,17 @@ const FREQUENCY_LABELS: Record<string, string> = {
 };
 
 export default async function FinanceiroPage() {
-  const [gastos, gastoStats, caixas, orderStats, gastoCategories] = await Promise.all([
+  const [gastos, gastoStats, caixas, orderStats, gastoCategories, orders, products] = await Promise.all([
     adminListGastos(),
     adminGastoStats(),
     adminListCaixas(30),
     adminOrderStats(),
     adminListGastoCategories().catch(() => [] as Awaited<ReturnType<typeof adminListGastoCategories>>),
+    adminListOrders(200).catch(() => []),
+    listProducts().catch(() => []),
   ]);
+
+  const openCaixaOrders = orders.filter((o) => o.status === "completed" && !o.caixaId);
 
   // Faturamento do mês atual (a partir dos caixas)
   const now = new Date();
@@ -104,11 +110,24 @@ export default async function FinanceiroPage() {
       </section>
 
       {/* Gastos */}
-      <section>
+      <section className="mb-16">
         <GastosManager
           gastos={gastos}
           categories={gastoCategories}
           frequencyLabels={FREQUENCY_LABELS}
+        />
+      </section>
+
+      {/* Agenda */}
+      <section className="mb-16">
+        <CaixaSection
+          caixas={caixas}
+          pendingCount={openCaixaOrders.length}
+          openOrders={openCaixaOrders}
+          products={products}
+          gastos={gastos}
+          isFinanceiro
+          gastoCategories={gastoCategories}
         />
       </section>
     </div>

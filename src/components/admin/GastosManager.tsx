@@ -34,6 +34,7 @@ export function GastosManager({ gastos: initial, categories: initialCats, freque
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Gasto | null>(null);
   const [showCats, setShowCats] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c]));
 
@@ -45,6 +46,8 @@ export function GastosManager({ gastos: initial, categories: initialCats, freque
   const inactive = gastos.filter((g) => !g.active);
   const monthlyTotal = active.filter((g) => g.frequency === "mensal").reduce((s, g) => s + g.amount, 0);
   const sorted = [...active, ...inactive];
+  const COLLAPSE_LIMIT = 5;
+  const showExpandBtn = sorted.length > COLLAPSE_LIMIT;
 
   return (
     <div className="border border-nyx-line">
@@ -86,19 +89,32 @@ export function GastosManager({ gastos: initial, categories: initialCats, freque
           <p className="text-xs text-nyx-soft mt-1">Adicione aluguel, marketing e outros custos recorrentes.</p>
         </div>
       ) : (
-        <div className="max-h-[400px] overflow-y-auto scrollbar-thin divide-y divide-nyx-line">
-          {sorted.map((g) => (
-            <GastoRow
-              key={g.id}
-              gasto={g}
-              category={catMap[g.category]}
-              frequencyLabels={frequencyLabels}
-              onEdit={() => setEditing(g)}
-              onDelete={() => handleDeleted(g.id)}
-              onToggle={(updated) => handleUpdated(updated)}
-            />
-          ))}
-        </div>
+        <>
+          <div className={`overflow-y-auto scrollbar-thin divide-y divide-nyx-line transition-all ${expanded ? "" : "max-h-[300px]"}`}>
+            {sorted.map((g) => (
+              <GastoRow
+                key={g.id}
+                gasto={g}
+                category={catMap[g.category]}
+                frequencyLabels={frequencyLabels}
+                onEdit={() => setEditing(g)}
+                onDelete={() => handleDeleted(g.id)}
+                onToggle={(updated) => handleUpdated(updated)}
+              />
+            ))}
+          </div>
+          {showExpandBtn && (
+            <div className="border-t border-nyx-line">
+              <button
+                type="button"
+                onClick={() => setExpanded((e) => !e)}
+                className="w-full label-mono text-[10px] text-nyx-soft hover:text-nyx-ink py-2.5 transition-colors"
+              >
+                {expanded ? "▲ Recolher" : `▼ Ver todos (${sorted.length})`}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {showForm && (
@@ -214,21 +230,22 @@ function todayISO() {
   }).split("/").reverse().join("-");
 }
 
-function GastoModal({
-  gasto, categories, onClose, onSaved,
+export function GastoModal({
+  gasto, categories, onClose, onSaved, initialDate,
 }: {
   gasto?: Gasto;
   categories: GastoCategoryItem[];
   onClose: () => void;
   onSaved: (g: Gasto) => void;
+  initialDate?: string;
 }) {
   const isEdit = !!gasto;
   const [pending, startTransition] = useTransition();
   const [description, setDescription] = useState(gasto?.description ?? "");
   const [amount, setAmount] = useState(gasto?.amount ? String(gasto.amount) : "");
-  const [frequency, setFrequency] = useState<GastoFrequency>(gasto?.frequency ?? "mensal");
+  const [frequency, setFrequency] = useState<GastoFrequency>(gasto?.frequency ?? "avulso");
   const [category, setCategory] = useState(gasto?.category ?? (categories[0]?.id ?? "outros"));
-  const [date, setDate] = useState(gasto?.date ?? "");
+  const [date, setDate] = useState(gasto?.date ?? initialDate ?? "");
   const [remindRenewal, setRemindRenewal] = useState(gasto?.remindRenewal ?? false);
   const [dueDate, setDueDate] = useState(gasto?.dueDate ?? "");
   const [error, setError] = useState("");
@@ -239,13 +256,13 @@ function GastoModal({
     const amt = parseFloat(amount);
     if (!description.trim()) { setError("Descrição obrigatória."); return; }
     if (!amt || amt <= 0) { setError("Valor inválido."); return; }
-    if (remindRenewal && !dueDate) { setError("Informe a data de vencimento para ativar o lembrete."); return; }
+    if (remindRenewal && !dueDate) { setError("Informe o próximo vencimento para ativar o lembrete."); return; }
     startTransition(async () => {
       const payload = {
         description: description.trim(), amount: amt, frequency, category,
-        date: date || undefined,
+        date: frequency === "avulso" ? (date || undefined) : undefined,
         remindRenewal: remindRenewal || undefined,
-        dueDate: remindRenewal && dueDate ? dueDate : undefined,
+        dueDate: dueDate || undefined,
       };
       if (isEdit && gasto) {
         const res = await updateGastoAction(gasto.id, payload);
@@ -293,7 +310,12 @@ function GastoModal({
               </div>
               <div>
                 <label className="label-mono text-[10px] text-nyx-muted block mb-1">Frequência</label>
-                <select className="input-nyx" value={frequency} onChange={(e) => setFrequency(e.target.value as GastoFrequency)}>
+                <select className="input-nyx" value={frequency} onChange={(e) => {
+                const f = e.target.value as GastoFrequency;
+                setFrequency(f);
+                setDate("");
+                if (f === "avulso") { setDueDate(""); setRemindRenewal(false); }
+              }}>
                   {FREQUENCIES.map((f) => <option key={f} value={f}>{FREQUENCY_LABELS[f]}</option>)}
                 </select>
               </div>
@@ -307,34 +329,27 @@ function GastoModal({
                 </select>
               </div>
             </div>
-            <div>
-              <label className="label-mono text-[10px] text-nyx-muted block mb-1">
-                Data do gasto (opcional — deixe em branco para recorrente sem data fixa)
-              </label>
-              <input
-                type="date"
-                className="input-nyx"
-                value={date}
-                max={todayISO()}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-
-            <div className="border border-nyx-line p-3 space-y-3">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+            {/* Avulso: data específica (passado/hoje, aparece na agenda) */}
+            {frequency === "avulso" && (
+              <div>
+                <label className="label-mono text-[10px] text-nyx-muted block mb-1">Data do gasto</label>
                 <input
-                  type="checkbox"
-                  checked={remindRenewal}
-                  onChange={(e) => setRemindRenewal(e.target.checked)}
-                  className="accent-amber-500"
+                  type="date"
+                  className="input-nyx"
+                  value={date}
+                  max={todayISO()}
+                  onChange={(e) => setDate(e.target.value)}
                 />
-                <span className="label-mono text-[10px] text-nyx-muted">
-                  Lembrar renovação — avisar 10 dias, 3 dias antes e no dia do vencimento
-                </span>
-              </label>
-              {remindRenewal && (
+              </div>
+            )}
+
+            {/* Mensal / Semanal: data de vencimento prominente */}
+            {(frequency === "mensal" || frequency === "semanal") && (
+              <div className="space-y-3">
                 <div>
-                  <label className="label-mono text-[10px] text-nyx-muted block mb-1">Data de vencimento *</label>
+                  <label className="label-mono text-[10px] text-nyx-muted block mb-1">
+                    Próximo vencimento
+                  </label>
                   <input
                     type="date"
                     className="input-nyx"
@@ -342,8 +357,19 @@ function GastoModal({
                     onChange={(e) => setDueDate(e.target.value)}
                   />
                 </div>
-              )}
-            </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={remindRenewal}
+                    onChange={(e) => setRemindRenewal(e.target.checked)}
+                    className="accent-amber-500"
+                  />
+                  <span className="label-mono text-[10px] text-nyx-muted">
+                    Lembrar renovação — avisar 10 dias, 3 dias antes e no dia
+                  </span>
+                </label>
+              </div>
+            )}
 
             {error && <p className="text-xs text-red-500">{error}</p>}
             <div className="flex justify-end gap-2 pt-2">

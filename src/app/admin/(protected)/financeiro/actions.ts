@@ -6,6 +6,7 @@ import {
   adminCreateGasto,
   adminUpdateGasto,
   adminDeleteGasto,
+  adminResolveGastoRenewal,
   adminCreateGastoCategory,
   adminUpdateGastoCategory,
   adminDeleteGastoCategory,
@@ -54,6 +55,13 @@ export async function updateGastoAction(
 ): Promise<ActionResult> {
   try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
   await adminUpdateGasto(id, updates);
+  revalidate();
+  return { ok: true };
+}
+
+export async function resolveGastoRenewalAction(id: string, newAmount?: number): Promise<ActionResult> {
+  try { await requireAdmin(); } catch { return { ok: false, error: "Sessão inválida." }; }
+  await adminResolveGastoRenewal(id, newAmount);
   revalidate();
   return { ok: true };
 }

@@ -23,7 +23,7 @@ const NAV = [
 // Bottom nav shows only top 4 items
 const BOTTOM_NAV = NAV.slice(0, 4);
 
-export function AdminSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
+export function AdminSidebar({ pendingCount = 0, gastosOverdueCount = 0, gastosUpcomingCount = 0 }: { pendingCount?: number; gastosOverdueCount?: number; gastosUpcomingCount?: number }) {
   const pathname = usePathname();
 
   function isActive(href: string, exact?: boolean) {
@@ -43,7 +43,8 @@ export function AdminSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
         {NAV.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href, item.exact);
-          const showBadge = item.href === "/admin/pedidos" && pendingCount > 0;
+          const showPedidosBadge = item.href === "/admin/pedidos" && pendingCount > 0;
+          const isFinanceiro = item.href === "/admin/financeiro";
           return (
             <Link
               key={item.href}
@@ -56,9 +57,23 @@ export function AdminSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
             >
               <Icon size={16} strokeWidth={1.5} />
               <span className="label-mono text-[11px] tracking-wider">{item.label}</span>
-              {showBadge && (
+              {showPedidosBadge && (
                 <span className="ml-auto bg-amber-500 text-white text-[9px] font-bold min-w-[16px] h-4 rounded-full flex items-center justify-center px-1">
                   {pendingCount}
+                </span>
+              )}
+              {isFinanceiro && (gastosOverdueCount > 0 || gastosUpcomingCount > 0) && (
+                <span className="ml-auto flex items-center gap-1">
+                  {gastosOverdueCount > 0 && (
+                    <span className="bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-4 rounded-full flex items-center justify-center px-1">
+                      {gastosOverdueCount}
+                    </span>
+                  )}
+                  {gastosUpcomingCount > 0 && (
+                    <span className="bg-amber-500 text-white text-[9px] font-bold min-w-[16px] h-4 rounded-full flex items-center justify-center px-1">
+                      {gastosUpcomingCount}
+                    </span>
+                  )}
                 </span>
               )}
             </Link>
@@ -73,7 +88,7 @@ export function AdminSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
   );
 }
 
-export function AdminBottomNav({ pendingCount = 0 }: { pendingCount?: number }) {
+export function AdminBottomNav({ pendingCount = 0, gastosOverdueCount = 0, gastosUpcomingCount = 0 }: { pendingCount?: number; gastosOverdueCount?: number; gastosUpcomingCount?: number }) {
   const pathname = usePathname();
 
   function isActive(href: string, exact?: boolean) {
@@ -86,7 +101,8 @@ export function AdminBottomNav({ pendingCount = 0 }: { pendingCount?: number }) 
       {BOTTOM_NAV.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.href, item.exact);
-        const showBadge = item.href === "/admin/pedidos" && pendingCount > 0;
+        const showPedidosBadge = item.href === "/admin/pedidos" && pendingCount > 0;
+        const isFinanceiro = item.href === "/admin/financeiro";
         return (
           <Link
             key={item.href}
@@ -97,9 +113,19 @@ export function AdminBottomNav({ pendingCount = 0 }: { pendingCount?: number }) 
           >
             <span className="relative">
               <Icon size={20} strokeWidth={1.5} />
-              {showBadge && (
+              {showPedidosBadge && (
                 <span className="absolute -top-1 -right-2 bg-amber-500 text-white text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">
                   {pendingCount}
+                </span>
+              )}
+              {isFinanceiro && gastosOverdueCount > 0 && (
+                <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">
+                  {gastosOverdueCount}
+                </span>
+              )}
+              {isFinanceiro && gastosUpcomingCount > 0 && gastosOverdueCount === 0 && (
+                <span className="absolute -top-1 -right-3 bg-amber-500 text-white text-[8px] font-bold min-w-[14px] h-3.5 rounded-full flex items-center justify-center px-0.5">
+                  {gastosUpcomingCount}
                 </span>
               )}
             </span>

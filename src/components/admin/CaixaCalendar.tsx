@@ -16,7 +16,8 @@ import type { Caixa } from "@/lib/admin-caixa";
 import type { Order, OrderItem } from "@/lib/admin-orders";
 import type { Product, PaymentMethod } from "@/lib/types";
 import { PAYMENT_LABELS, SIZE_LABELS } from "@/lib/types";
-import type { Gasto } from "@/lib/admin-gastos";
+import type { Gasto, GastoCategoryItem } from "@/lib/admin-gastos";
+import { GastoModal } from "@/components/admin/GastosManager";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -69,9 +70,11 @@ interface Props {
   openOrders: Order[];
   products: Product[];
   gastos?: Gasto[];
+  isFinanceiro?: boolean;
+  gastoCategories?: GastoCategoryItem[];
 }
 
-export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Props) {
+export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp = [], isFinanceiro = false, gastoCategories = [] }: Props) {
   const today = todaySP();
   const now = new Date();
 
@@ -85,6 +88,8 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Pro
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [closingDate, setClosingDate] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
+  const [localGastos, setLocalGastos] = useState<Gasto[]>(gastosProp);
+  const [showAddGasto, setShowAddGasto] = useState(false);
 
   const caixaByDate = useMemo(() => {
     const m = new Map<string, Caixa>();
@@ -103,16 +108,18 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Pro
     return m;
   }, [openOrders]);
 
-  const gastosByDate = useMemo(() => {
-    const m = new Map<string, Gasto[]>();
-    for (const g of gastos) {
+  const { gastosByDate, gastosAmtByDate } = useMemo(() => {
+    const byDate = new Map<string, Gasto[]>();
+    const amtByDate = new Map<string, number>();
+    for (const g of localGastos) {
       if (!g.date) continue;
-      const arr = m.get(g.date) ?? [];
+      const arr = byDate.get(g.date) ?? [];
       arr.push(g);
-      m.set(g.date, arr);
+      byDate.set(g.date, arr);
+      amtByDate.set(g.date, (amtByDate.get(g.date) ?? 0) + g.amount);
     }
-    return m;
-  }, [gastos]);
+    return { gastosByDate: byDate, gastosAmtByDate: amtByDate };
+  }, [localGastos]);
 
   const cells = useMemo(() => buildMonthCells(viewYear, viewMonth), [viewYear, viewMonth]);
 
@@ -284,6 +291,28 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Pro
                 Adicionar venda retroativa
               </button>
             )}
+            {isFinanceiro && !isFutureDay && (
+              <button
+                onClick={() => setShowAddGasto(true)}
+                className="w-full justify-center inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-2 border border-red-500/30 text-red-400 hover:border-red-500/60 transition-colors"
+              >
+                <Plus size={11} />
+                Adicionar gasto retroativo
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Botão de gasto mesmo quando há atividade (modo financeiro) */}
+        {isFinanceiro && hasActivity && !isFutureDay && (
+          <div className="pt-2">
+            <button
+              onClick={() => setShowAddGasto(true)}
+              className="w-full justify-center inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-2 border border-red-500/30 text-red-400 hover:border-red-500/60 transition-colors"
+            >
+              <Plus size={11} />
+              Adicionar gasto neste dia
+            </button>
           </div>
         )}
 
@@ -337,44 +366,81 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Pro
             const isSelected = iso === selectedDate;
             const caixa = caixaByDate.get(iso);
             const dayNum = Number(iso.split("-")[2]);
+            const dayGastoAmt = gastosAmtByDate.get(iso) ?? 0;
+            const net = hasCaixa ? caixa!.totalGeral - dayGastoAmt : 0;
 
-            return (
-              <button
-                key={iso}
-                onClick={() => selectDate(iso)}
-                disabled={isFuture && !hasCaixa && !hasOpen}
-                className={[
-                  "relative flex flex-col items-center justify-center min-h-[48px] px-0.5 py-1.5 border transition-all overflow-hidden",
-                  isSelected
-                    ? "border-nyx-ink bg-nyx-ink"
-                    : hasCaixa
-                    ? "border-nyx-line hover:border-nyx-muted cursor-pointer"
+            const borderCls = isSelected
+              ? "border-nyx-ink bg-nyx-ink"
+              : isFinanceiro
+                ? hasCaixa
+                  ? net > 0
+                    ? "border-emerald-500/50 hover:border-emerald-500 cursor-pointer"
+                    : "border-red-500/40 hover:border-red-500/70 cursor-pointer"
+                  : hasGasto
+                    ? "border-red-400/30 hover:border-red-400/60 cursor-pointer"
                     : hasOpen
                     ? "border-amber-400/50 hover:border-amber-400 cursor-pointer"
                     : isToday
                     ? "border-nyx-muted/50 hover:border-nyx-muted cursor-pointer"
                     : isFuture
                     ? "border-transparent opacity-25 cursor-default"
-                    : "border-transparent hover:border-nyx-line/50 cursor-pointer opacity-50",
-                ].join(" ")}
+                    : "border-transparent hover:border-nyx-line/50 cursor-pointer opacity-50"
+                : hasCaixa
+                ? "border-nyx-line hover:border-nyx-muted cursor-pointer"
+                : hasOpen
+                ? "border-amber-400/50 hover:border-amber-400 cursor-pointer"
+                : isToday
+                ? "border-nyx-muted/50 hover:border-nyx-muted cursor-pointer"
+                : isFuture
+                ? "border-transparent opacity-25 cursor-default"
+                : "border-transparent hover:border-nyx-line/50 cursor-pointer opacity-50";
+
+            return (
+              <button
+                key={iso}
+                onClick={() => selectDate(iso)}
+                disabled={isFuture && !hasCaixa && !hasOpen}
+                className={`relative flex flex-col items-center justify-center min-h-[48px] px-0.5 py-1.5 border transition-all overflow-hidden ${borderCls}`}
               >
                 <span className={`label-mono text-[11px] ${isSelected ? "text-nyx-bg" : "text-nyx-ink"}`}>
                   {dayNum}
                 </span>
-                {hasCaixa && (
+
+                {/* Financeiro mode: desktop shows amounts */}
+                {isFinanceiro ? (
                   <>
-                    <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${isSelected ? "text-nyx-bg/70" : "text-nyx-muted"}`}>
-                      {compactPrice(caixa!.totalGeral)}
-                    </span>
-                    <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-nyx-bg/60" : "bg-nyx-muted"}`} />
+                    {hasCaixa && (
+                      <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${
+                        isSelected ? "text-nyx-bg/70" : net >= 0 ? "text-emerald-400" : "text-red-400"
+                      }`}>
+                        {net >= 0 ? "+" : ""}{compactPrice(Math.abs(net))}
+                      </span>
+                    )}
+                    {!hasCaixa && hasGasto && (
+                      <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${isSelected ? "text-nyx-bg/70" : "text-red-400"}`}>
+                        -{compactPrice(dayGastoAmt)}
+                      </span>
+                    )}
+                    {/* Mobile: dots */}
+                    {hasCaixa && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-nyx-bg/60" : net >= 0 ? "bg-emerald-400" : "bg-red-400"}`} />}
+                    {!hasCaixa && hasOpen && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-400"}`} />}
+                    {!hasCaixa && !hasOpen && hasGasto && <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-red-300" : "bg-red-400/70"}`} />}
+                  </>
+                ) : (
+                  <>
+                    {hasCaixa && (
+                      <>
+                        <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${isSelected ? "text-nyx-bg/70" : "text-nyx-muted"}`}>
+                          {compactPrice(caixa!.totalGeral)}
+                        </span>
+                        <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-nyx-bg/60" : "bg-nyx-muted"}`} />
+                      </>
+                    )}
+                    {hasOpen && !hasCaixa && <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-400"}`} />}
+                    {hasGasto && <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-red-300" : "bg-red-400/70"}`} />}
                   </>
                 )}
-                {hasOpen && !hasCaixa && (
-                  <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-400"}`} />
-                )}
-                {hasGasto && (
-                  <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-red-300" : "bg-red-400/70"}`} />
-                )}
+
                 {isToday && !isSelected && (
                   <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-3 h-px bg-nyx-muted" />
                 )}
@@ -384,18 +450,37 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Pro
         </div>
 
         <div className="flex items-center gap-5 pt-1 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 border border-nyx-line" />
-            <span className="label-mono text-[9px] text-nyx-muted">Caixa fechado</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 border border-amber-400/50" />
-            <span className="label-mono text-[9px] text-nyx-muted">Pendente / aberto</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-400/70" />
-            <span className="label-mono text-[9px] text-nyx-muted">Gasto registrado</span>
-          </div>
+          {isFinanceiro ? (
+            <>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 border border-emerald-500/50" />
+                <span className="label-mono text-[9px] text-nyx-muted">Lucro positivo</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 border border-red-500/40" />
+                <span className="label-mono text-[9px] text-nyx-muted">Saldo negativo / gasto</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 border border-amber-400/50" />
+                <span className="label-mono text-[9px] text-nyx-muted">Pendente / aberto</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 border border-nyx-line" />
+                <span className="label-mono text-[9px] text-nyx-muted">Caixa fechado</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 border border-amber-400/50" />
+                <span className="label-mono text-[9px] text-nyx-muted">Pendente / aberto</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-red-400/70" />
+                <span className="label-mono text-[9px] text-nyx-muted">Gasto registrado</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -404,6 +489,15 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos = [] }: Pro
           products={products}
           initialDate={selectedDate}
           onClose={() => setShowAddSale(false)}
+        />
+      )}
+
+      {showAddGasto && (
+        <GastoModal
+          categories={gastoCategories}
+          initialDate={selectedDate}
+          onClose={() => setShowAddGasto(false)}
+          onSaved={(g) => { setLocalGastos((prev) => [...prev, g]); setShowAddGasto(false); }}
         />
       )}
 
