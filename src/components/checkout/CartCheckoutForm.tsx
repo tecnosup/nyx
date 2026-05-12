@@ -29,7 +29,7 @@ const PAYMENT_OPTIONS: PaymentMethod[] = [
 
 interface Props {
   items: CartItem[];
-  onSuccess: () => void;
+  onSuccess: (whatsappUrl: string) => void;
 }
 
 export function CartCheckoutForm({ items, onSuccess }: Props) {
@@ -111,8 +111,9 @@ export function CartCheckoutForm({ items, onSuccess }: Props) {
         notes: values.notes,
         coupon: coupon ?? undefined,
       });
-      window.open(buildWhatsAppUrl(message), "_blank", "noopener,noreferrer");
-      onSuccess();
+      const url = buildWhatsAppUrl(message);
+      window.open(url, "_blank", "noopener,noreferrer");
+      onSuccess(url);
     } catch {
       setServerError("Erro de conexão. Tente novamente.");
     }
