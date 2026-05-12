@@ -414,7 +414,9 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                     ? "border-transparent opacity-20 cursor-default"
                     : "border-transparent hover:border-nyx-line/50 cursor-pointer opacity-50"
                 : hasCaixa
-                ? "border-nyx-line hover:border-nyx-muted cursor-pointer"
+                ? net > 0
+                  ? "border-emerald-500/50 hover:border-emerald-500 cursor-pointer"
+                  : "border-red-500/40 hover:border-red-500/70 cursor-pointer"
                 : hasOpen
                 ? "border-amber-400/50 hover:border-amber-400 cursor-pointer"
                 : isToday
@@ -464,14 +466,15 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                   <>
                     {hasCaixa && (
                       <>
-                        <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${isSelected ? "text-nyx-bg/70" : "text-nyx-muted"}`}>
-                          {compactPrice(caixa!.totalGeral)}
+                        <span className={`hidden sm:block label-mono text-[8px] leading-tight mt-0.5 w-full text-center truncate ${
+                          isSelected ? "text-nyx-bg/70" : net >= 0 ? "text-emerald-400" : "text-red-400"
+                        }`}>
+                          {net >= 0 ? "+" : ""}{compactPrice(Math.abs(net))}
                         </span>
-                        <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-nyx-bg/60" : "bg-nyx-muted"}`} />
+                        <span className={`sm:hidden w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-nyx-bg/60" : net >= 0 ? "bg-emerald-400" : "bg-red-400"}`} />
                       </>
                     )}
                     {hasOpen && !hasCaixa && <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-amber-300" : "bg-amber-400"}`} />}
-                    {hasGasto && <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-red-300" : "bg-red-400/70"}`} />}
                   </>
                 )}
 
@@ -506,16 +509,12 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
           ) : (
             <>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 border border-nyx-line" />
+                <div className="w-3 h-3 border border-emerald-500/50" />
                 <span className="label-mono text-[9px] text-nyx-muted">Caixa fechado</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 border border-amber-400/50" />
                 <span className="label-mono text-[9px] text-nyx-muted">Pendente / aberto</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-red-400/70" />
-                <span className="label-mono text-[9px] text-nyx-muted">Gasto registrado</span>
               </div>
             </>
           )}
