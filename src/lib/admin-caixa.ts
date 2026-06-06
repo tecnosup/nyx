@@ -102,11 +102,9 @@ export async function adminReopenCaixa(caixaId: string): Promise<string[]> {
   return caixa.orderIds;
 }
 
-export async function adminListCaixas(limitCount = 90): Promise<Caixa[]> {
-  const snap = await adminDb()
-    .collection(COLLECTION)
-    .orderBy("closedAt", "desc")
-    .limit(limitCount)
-    .get();
+export async function adminListCaixas(limitCount?: number): Promise<Caixa[]> {
+  let query = adminDb().collection(COLLECTION).orderBy("closedAt", "desc") as FirebaseFirestore.Query;
+  if (limitCount) query = query.limit(limitCount);
+  const snap = await query.get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Caixa);
 }

@@ -22,7 +22,7 @@ export default async function FinanceiroPage() {
   const [gastos, gastoStats, caixas, orderStats, gastoCategories, orders, products] = await Promise.all([
     adminListGastos(),
     adminGastoStats(),
-    adminListCaixas(30),
+    adminListCaixas(),
     adminOrderStats(),
     adminListGastoCategories().catch(() => [] as Awaited<ReturnType<typeof adminListGastoCategories>>),
     adminListOrders(200).catch(() => []),

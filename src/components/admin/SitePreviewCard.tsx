@@ -27,7 +27,7 @@ export function SitePreviewCard({ siteUrl }: Props) {
 
   return (
     <div
-      className="relative border border-nyx-line flex flex-col cursor-pointer group"
+      className="relative border border-nyx-line flex flex-col cursor-pointer group min-w-0 overflow-hidden"
       onClick={() => setClicked(true)}
     >
       {/* Header */}

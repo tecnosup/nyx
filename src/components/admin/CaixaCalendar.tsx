@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition } from "react";
 import {
-  ChevronLeft, ChevronRight, Lock, LockOpen, Plus, Pencil, Trash2, X, CheckCircle, Calendar,
+  ChevronLeft, ChevronRight, Lock, LockOpen, Plus, Pencil, Trash2, X, CheckCircle, ShoppingBag, TrendingDown,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -181,182 +181,189 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
   const isFutureDay = selectedDate > today;
   const hasActivity = !!(selCaixa || selOpen.length > 0);
 
+  // KPI values for selected day
+  const selGastoAmt = selGastos.reduce((s, g) => s + g.amount, 0);
+  const selFaturamento = selCaixa ? selCaixa.totalGeral : selOpen.reduce((s, o) => s + o.totalPix, 0);
+  const selLiquido = selFaturamento - selGastoAmt;
+
   return (
     <>
-      {/* Detail panel — always visible, updates with selected day */}
-      <div className="border border-nyx-line p-5 space-y-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Calendar size={13} className="text-nyx-muted shrink-0" />
-          <p className="label-mono text-sm text-nyx-ink">{fmtBR(selectedDate)}</p>
-          {selectedDate === today && (
-            <span className="label-mono text-[9px] px-2 py-0.5 border border-nyx-line text-nyx-soft">Hoje</span>
-          )}
+      {/* Detail panel */}
+      <div className="border border-nyx-line overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-nyx-line bg-nyx-line/20">
+          <div className="flex items-center gap-2">
+            <ShoppingBag size={14} className="text-nyx-muted shrink-0" />
+            <span className="heading-display text-base tracking-tight">Caixa</span>
+            <span className="label-mono text-[9px] text-nyx-soft px-2 py-0.5 border border-nyx-line">
+              Fechamentos e gastos por dia
+            </span>
+          </div>
           {selCaixa && (
-            <>
-              <Lock size={11} className="text-nyx-muted shrink-0 ml-1" />
-              <span className="label-mono text-[9px] px-2 py-0.5 border border-nyx-line text-nyx-muted">
-                {selCaixa.orderCount} pedido{selCaixa.orderCount > 1 ? "s" : ""}
-              </span>
-            </>
-          )}
-          {selOpen.length > 0 && (
-            <>
-              <LockOpen size={11} className="text-amber-500 shrink-0 ml-1" />
-              <span className="label-mono text-[9px] px-2 py-0.5 border border-amber-400 text-amber-500">
-                {selOpen.length} aberto{selOpen.length > 1 ? "s" : ""}
-              </span>
-            </>
+            <button
+              disabled={pending && reopeningId === selCaixa.id}
+              onClick={() => handleReopen(selCaixa.id)}
+              className="inline-flex items-center gap-1.5 label-mono text-[9px] px-2.5 py-1 border border-nyx-line text-nyx-muted hover:text-nyx-ink hover:border-nyx-muted transition-colors disabled:opacity-40"
+            >
+              <LockOpen size={10} />
+              {pending && reopeningId === selCaixa.id ? "Reabrindo…" : "Reabrir"}
+            </button>
           )}
         </div>
 
-        {/* Closed caixa summary */}
-        {selCaixa && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <CaixaStat label="Pix" value={formatPrice(selCaixa.totalPix)} />
-              <CaixaStat label="Cartão" value={formatPrice(selCaixa.totalCard)} />
-              {selCaixa.totalTransferencia > 0 && (
-                <CaixaStat label="Transferência" value={formatPrice(selCaixa.totalTransferencia)} />
-              )}
-              {selCaixa.totalCombinar > 0 && (
-                <CaixaStat label="Combinar" value={formatPrice(selCaixa.totalCombinar)} />
-              )}
-              <CaixaStat label="Total geral" value={formatPrice(selCaixa.totalGeral)} bold />
+        <div className="p-5 space-y-4">
+          {/* Date row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="heading-display text-lg text-nyx-ink">{fmtBR(selectedDate)}</p>
+            {selectedDate === today && (
+              <span className="label-mono text-[9px] px-2 py-0.5 border border-nyx-line text-nyx-soft">Hoje</span>
+            )}
+            {selCaixa && (
+              <span className="inline-flex items-center gap-1 label-mono text-[9px] px-2 py-0.5 border border-emerald-500/40 text-emerald-500">
+                <Lock size={9} />
+                {selCaixa.orderCount} pedido{selCaixa.orderCount > 1 ? "s" : ""}
+              </span>
+            )}
+            {selOpen.length > 0 && (
+              <span className="inline-flex items-center gap-1 label-mono text-[9px] px-2 py-0.5 border border-amber-400/50 text-amber-500">
+                <LockOpen size={9} />
+                {selOpen.length} aberto{selOpen.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {/* KPIs */}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="label-mono text-[9px] text-nyx-muted mb-1">Faturamento</p>
+              <p className="heading-display text-xl text-nyx-ink">{formatPrice(selFaturamento)}</p>
             </div>
-            <div className="flex justify-end">
-              <button
-                disabled={pending && reopeningId === selCaixa.id}
-                onClick={() => handleReopen(selCaixa.id)}
-                className="inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-1.5 border border-nyx-line text-nyx-muted hover:text-nyx-ink hover:border-nyx-muted transition-colors disabled:opacity-40"
-              >
-                <LockOpen size={11} />
-                {pending && reopeningId === selCaixa.id ? "Reabrindo…" : "Reabrir caixa"}
-              </button>
+            <div>
+              <p className="label-mono text-[9px] text-nyx-muted mb-1">Gastos</p>
+              <p className={`heading-display text-xl ${selGastoAmt > 0 ? "text-red-400" : "text-nyx-ink"}`}>
+                {formatPrice(selGastoAmt)}
+              </p>
+            </div>
+            <div>
+              <p className="label-mono text-[9px] text-nyx-muted mb-1">Líquido</p>
+              <p className={`heading-display text-xl ${selLiquido >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {formatPrice(selLiquido)}
+              </p>
             </div>
           </div>
-        )}
 
-        {/* Open / editable orders */}
-        {selOpen.length > 0 && (
-          <div className="space-y-2">
-            {selOpen.map((o) => (
-              <div key={o.id} className="flex items-center gap-3 py-2 border-b border-nyx-line/40 last:border-0">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-nyx-ink truncate">{o.customerName}</p>
-                  <p className="text-[10px] text-nyx-muted">
-                    {PAYMENT_LABELS[o.paymentMethod]} · {formatPrice(o.totalPix)}
-                  </p>
+          {/* Breakdown por método quando caixa fechado */}
+          {selCaixa && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+              {selCaixa.totalPix > 0 && <CaixaStat label="Pix" value={formatPrice(selCaixa.totalPix)} />}
+              {selCaixa.totalCard > 0 && <CaixaStat label="Cartão" value={formatPrice(selCaixa.totalCard)} />}
+              {selCaixa.totalTransferencia > 0 && <CaixaStat label="Transferência" value={formatPrice(selCaixa.totalTransferencia)} />}
+              {selCaixa.totalCombinar > 0 && <CaixaStat label="Combinar" value={formatPrice(selCaixa.totalCombinar)} />}
+            </div>
+          )}
+
+          {/* Open / editable orders */}
+          {selOpen.length > 0 && (
+            <div className="space-y-1.5 border-t border-nyx-line/50 pt-3">
+              {selOpen.map((o) => (
+                <div key={o.id} className="flex items-center gap-3 py-1.5 border-b border-nyx-line/30 last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-nyx-ink truncate">{o.customerName}</p>
+                    <p className="text-[10px] text-nyx-muted">
+                      {PAYMENT_LABELS[o.paymentMethod]} · {formatPrice(o.totalPix)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => setEditingOrder(o)} title="Editar" className="p-1.5 text-nyx-soft hover:text-nyx-ink transition-colors">
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      disabled={pending && deletingId === o.id}
+                      onClick={() => handleDelete(o.id)}
+                      title="Excluir"
+                      className="p-1.5 text-nyx-soft hover:text-red-500 transition-colors disabled:opacity-40"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => setEditingOrder(o)}
-                    title="Editar pedido"
-                    className="p-1.5 text-nyx-soft hover:text-nyx-ink transition-colors"
-                  >
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    disabled={pending && deletingId === o.id}
-                    onClick={() => handleDelete(o.id)}
-                    title="Excluir pedido"
-                    className="p-1.5 text-nyx-soft hover:text-red-500 transition-colors disabled:opacity-40"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty day message */}
+          {!hasActivity && (
+            <p className="text-xs text-nyx-soft">Nenhum atendimento registrado neste dia.</p>
+          )}
+
+          {/* Vencimentos futuros (modo financeiro) */}
+          {selDue.length > 0 && (
+            <div className="border-t border-nyx-line/50 pt-3">
+              <p className="label-mono text-[9px] text-orange-400 mb-2 flex items-center gap-1.5">
+                <TrendingDown size={11} />
+                Vencimento{selDue.length > 1 ? "s" : ""} neste dia
+              </p>
+              <div className="space-y-1.5">
+                {selDue.map((g) => (
+                  <div key={g.id} className="flex items-center justify-between text-xs">
+                    <span className="text-nyx-muted truncate">{g.description}</span>
+                    <span className="text-amber-400 shrink-0 ml-2 tabular-nums">{formatPrice(g.amount)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-            <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
+            </div>
+          )}
+
+          {/* Gastos do dia */}
+          {selGastos.length > 0 && (
+            <div className="border-t border-nyx-line/50 pt-3">
+              <p className="label-mono text-[9px] text-nyx-soft mb-2">Gastos registrados</p>
+              <div className="space-y-1.5">
+                {selGastos.map((g) => (
+                  <div key={g.id} className="flex items-center justify-between text-xs">
+                    <span className="text-nyx-muted truncate">{g.description}</span>
+                    <span className="text-red-400 shrink-0 ml-2 tabular-nums">− {formatPrice(g.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {successMsg && <p className="text-xs text-emerald-500">{successMsg}</p>}
+
+          {/* Actions */}
+          {!isFutureDay && (
+            <div className="flex flex-col gap-2 pt-1">
               <button
                 onClick={() => setShowAddSale(true)}
-                className="inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-1.5 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors"
+                className="w-full justify-center inline-flex items-center gap-2 label-mono text-[10px] px-3 py-2.5 border border-nyx-line text-nyx-muted hover:text-nyx-ink hover:border-nyx-muted transition-colors"
               >
                 <Plus size={11} />
-                Adicionar venda
+                {hasActivity ? "Nova venda" : selectedDate === today ? "Nova venda" : "Adicionar venda retroativa"}
               </button>
-              <button
-                disabled={pending && closingDate === selectedDate}
-                onClick={() => handleCloseDate(selectedDate)}
-                className="inline-flex items-center gap-1.5 label-mono text-[10px] px-4 py-1.5 border border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-40"
-              >
-                <Lock size={11} />
-                {pending && closingDate === selectedDate ? "Fechando…" : "Fechar caixa"}
-              </button>
+              {isFinanceiro && (
+                <button
+                  onClick={() => setShowAddGasto(true)}
+                  className="w-full justify-center inline-flex items-center gap-2 label-mono text-[10px] px-3 py-2.5 border border-red-500/30 text-red-400 hover:border-red-500/60 transition-colors"
+                >
+                  <Plus size={11} />
+                  {hasActivity ? "Despesa do dia" : "Adicionar gasto retroativo"}
+                </button>
+              )}
+              {selOpen.length > 0 && (
+                <button
+                  disabled={pending && closingDate === selectedDate}
+                  onClick={() => handleCloseDate(selectedDate)}
+                  className="w-full justify-center inline-flex items-center gap-2 label-mono text-[10px] px-4 py-2.5 border border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors disabled:opacity-40"
+                >
+                  <Lock size={11} />
+                  {pending && closingDate === selectedDate ? "Fechando…" : "Fechar caixa"}
+                </button>
+              )}
             </div>
-          </div>
-        )}
-
-        {/* Empty day */}
-        {!hasActivity && (
-          <div className="space-y-2">
-            <p className="text-xs text-nyx-soft">Nenhuma venda registrada neste dia.</p>
-            {!isFutureDay && (
-              <button
-                onClick={() => setShowAddSale(true)}
-                className="w-full justify-center inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-2 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors"
-              >
-                <Plus size={11} />
-                {selectedDate === today ? "Registrar primeira venda do dia" : "Adicionar venda retroativa"}
-              </button>
-            )}
-            {isFinanceiro && !isFutureDay && (
-              <button
-                onClick={() => setShowAddGasto(true)}
-                className="w-full justify-center inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-2 border border-red-500/30 text-red-400 hover:border-red-500/60 transition-colors"
-              >
-                <Plus size={11} />
-                Adicionar gasto retroativo
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Botão de gasto mesmo quando há atividade (modo financeiro) */}
-        {isFinanceiro && hasActivity && !isFutureDay && (
-          <div className="pt-2">
-            <button
-              onClick={() => setShowAddGasto(true)}
-              className="w-full justify-center inline-flex items-center gap-1.5 label-mono text-[10px] px-3 py-2 border border-red-500/30 text-red-400 hover:border-red-500/60 transition-colors"
-            >
-              <Plus size={11} />
-              Adicionar gasto neste dia
-            </button>
-          </div>
-        )}
-
-        {/* Vencimentos futuros (modo financeiro) */}
-        {selDue.length > 0 && (
-          <div className={`pt-3 ${selGastos.length > 0 ? "" : "border-t border-nyx-line/50"}`}>
-            <p className="label-mono text-[9px] text-orange-400 mb-2 flex items-center gap-1">
-              <span>🔔</span> Vencimento{selDue.length > 1 ? "s" : ""} neste dia
-            </p>
-            <div className="space-y-1.5">
-              {selDue.map((g) => (
-                <div key={g.id} className="flex items-center justify-between text-xs">
-                  <span className="text-nyx-muted truncate">{g.description}</span>
-                  <span className="text-amber-400 shrink-0 ml-2 tabular-nums">{formatPrice(g.amount)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Gastos do dia */}
-        {selGastos.length > 0 && (
-          <div className="pt-3 border-t border-nyx-line/50">
-            <p className="label-mono text-[9px] text-nyx-soft mb-2">Gastos registrados</p>
-            <div className="space-y-1.5">
-              {selGastos.map((g) => (
-                <div key={g.id} className="flex items-center justify-between text-xs">
-                  <span className="text-nyx-muted truncate">{g.description}</span>
-                  <span className="text-red-400 shrink-0 ml-2 tabular-nums">− {formatPrice(g.amount)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {successMsg && <p className="text-xs text-emerald-500">{successMsg}</p>}
+          )}
+        </div>
       </div>
 
       {/* Calendar */}
