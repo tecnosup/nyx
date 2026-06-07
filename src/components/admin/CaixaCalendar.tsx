@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition, useEffect } from "react";
 import {
-  ChevronLeft, ChevronRight, Lock, LockOpen, Plus, Pencil, Trash2, X, CheckCircle, ShoppingBag, TrendingDown,
+  ChevronLeft, ChevronRight, Lock, LockOpen, Plus, Pencil, Trash2, X, CheckCircle, ShoppingBag, TrendingDown, ShoppingCart, Receipt, AlertTriangle,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -72,20 +72,35 @@ interface Props {
   gastos?: Gasto[];
   isFinanceiro?: boolean;
   gastoCategories?: GastoCategoryItem[];
+  initialSelectedDate?: string;
 }
 
-export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp = [], isFinanceiro = false, gastoCategories = [] }: Props) {
+export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp = [], isFinanceiro = false, gastoCategories = [], initialSelectedDate }: Props) {
   const today = todaySP();
   const now = new Date();
+  const initialDate = initialSelectedDate ?? today;
+  const [initialY, initialM] = initialDate.split("-").map(Number);
 
-  const [viewYear, setViewYear] = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth());
-  const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [viewYear, setViewYear] = useState(initialSelectedDate ? initialY : now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initialSelectedDate ? initialM - 1 : now.getMonth());
+  const [selectedDate, setSelectedDate] = useState<string>(initialDate);
+
+  // "Ver na agenda" navega pra mesma rota com um novo ?caixaDate= — o componente
+  // não remonta, então precisamos sincronizar a seleção quando o prop mudar.
+  useEffect(() => {
+    if (!initialSelectedDate) return;
+    const [y, m] = initialSelectedDate.split("-").map(Number);
+    setSelectedDate(initialSelectedDate);
+    setViewYear(y);
+    setViewMonth(m - 1);
+  }, [initialSelectedDate]);
   const [showAddSale, setShowAddSale] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [pending, startTransition] = useTransition();
   const [reopeningId, setReopeningId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [showReopenForGasto, setShowReopenForGasto] = useState(false);
   const [closingDate, setClosingDate] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [localGastos, setLocalGastos] = useState<Gasto[]>(gastosProp);
@@ -146,20 +161,47 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
   }
 
   function handleReopen(caixaId: string) {
-    if (!confirm("Reabrir este caixa? Os pedidos voltarão para o caixa aberto e o fechamento será removido.")) return;
-    setReopeningId(caixaId);
-    startTransition(async () => {
-      await reopenCaixaAction(caixaId);
-      setReopeningId(null);
+    setConfirmModal({
+      message: "Reabrir este caixa? Os pedidos voltarão para o caixa aberto e o fechamento será removido.",
+      onConfirm: () => {
+        setConfirmModal(null);
+        setReopeningId(caixaId);
+        startTransition(async () => {
+          await reopenCaixaAction(caixaId);
+          setReopeningId(null);
+        });
+      },
     });
   }
 
   function handleDelete(orderId: string) {
-    if (!confirm("Excluir este pedido? Esta ação não pode ser desfeita.")) return;
-    setDeletingId(orderId);
+    setConfirmModal({
+      message: "Excluir este pedido? Esta ação não pode ser desfeita.",
+      onConfirm: () => {
+        setConfirmModal(null);
+        setDeletingId(orderId);
+        startTransition(async () => {
+          await deleteOrderAction(orderId);
+          setDeletingId(null);
+        });
+      },
+    });
+  }
+
+  function handleAddGastoClick() {
+    if (selCaixa) { setShowReopenForGasto(true); return; }
+    setShowAddGasto(true);
+  }
+
+  function handleReopenAndAddGasto() {
+    if (!selCaixa) return;
+    const caixaId = selCaixa.id;
+    setShowReopenForGasto(false);
+    setReopeningId(caixaId);
     startTransition(async () => {
-      await deleteOrderAction(orderId);
-      setDeletingId(null);
+      await reopenCaixaAction(caixaId);
+      setReopeningId(null);
+      setShowAddGasto(true);
     });
   }
 
@@ -192,7 +234,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
       <div className="border border-nyx-line overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-nyx-line bg-nyx-line/20">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-nyx-line bg-nyx-line/20">
           <div className="flex items-center gap-2">
             <ShoppingBag size={14} className="text-nyx-muted shrink-0" />
             <span className="heading-display text-base tracking-tight">Caixa</span>
@@ -200,22 +242,12 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
               Fechamentos e gastos por dia
             </span>
           </div>
-          {selCaixa && (
-            <button
-              disabled={pending && reopeningId === selCaixa.id}
-              onClick={() => handleReopen(selCaixa.id)}
-              className="inline-flex items-center gap-1.5 label-mono text-[9px] px-2.5 py-1 border border-nyx-line text-nyx-muted hover:text-nyx-ink hover:border-nyx-muted transition-colors disabled:opacity-40"
-            >
-              <LockOpen size={10} />
-              {pending && reopeningId === selCaixa.id ? "Reabrindo…" : "Reabrir"}
-            </button>
-          )}
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-3">
           {/* Date row */}
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="heading-display text-lg text-nyx-ink">{fmtBR(selectedDate)}</p>
+            <p className="label-mono text-sm text-nyx-ink tracking-wide">{fmtBR(selectedDate)}</p>
             {selectedDate === today && (
               <span className="label-mono text-[9px] px-2 py-0.5 border border-nyx-line text-nyx-soft">Hoje</span>
             )}
@@ -236,18 +268,18 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
           {/* KPIs */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <p className="label-mono text-[9px] text-nyx-muted mb-1">Faturamento</p>
-              <p className="heading-display text-xl text-nyx-ink">{formatPrice(selFaturamento)}</p>
+              <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Faturamento</p>
+              <p className="heading-display text-lg text-nyx-ink">{formatPrice(selFaturamento)}</p>
             </div>
             <div>
-              <p className="label-mono text-[9px] text-nyx-muted mb-1">Gastos</p>
-              <p className={`heading-display text-xl ${selGastoAmt > 0 ? "text-red-400" : "text-nyx-ink"}`}>
+              <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Gastos</p>
+              <p className={`heading-display text-lg ${selGastoAmt > 0 ? "text-red-400" : "text-nyx-ink"}`}>
                 {formatPrice(selGastoAmt)}
               </p>
             </div>
             <div>
-              <p className="label-mono text-[9px] text-nyx-muted mb-1">Líquido</p>
-              <p className={`heading-display text-xl ${selLiquido >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Líquido</p>
+              <p className={`heading-display text-lg ${selLiquido >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {formatPrice(selLiquido)}
               </p>
             </div>
@@ -255,7 +287,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
 
           {/* Breakdown por método quando caixa fechado */}
           {selCaixa && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {selCaixa.totalPix > 0 && <CaixaStat label="Pix" value={formatPrice(selCaixa.totalPix)} />}
               {selCaixa.totalCard > 0 && <CaixaStat label="Cartão" value={formatPrice(selCaixa.totalCard)} />}
               {selCaixa.totalTransferencia > 0 && <CaixaStat label="Transferência" value={formatPrice(selCaixa.totalTransferencia)} />}
@@ -265,7 +297,7 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
 
           {/* Open / editable orders */}
           {selOpen.length > 0 && (
-            <div className="space-y-1.5 border-t border-nyx-line/50 pt-3">
+            <div className="space-y-1.5 border-t border-nyx-line/50 pt-2.5">
               {selOpen.map((o) => (
                 <div key={o.id} className="flex items-center gap-3 py-1.5 border-b border-nyx-line/30 last:border-0">
                   <div className="flex-1 min-w-0">
@@ -294,12 +326,12 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
 
           {/* Empty day message */}
           {!hasActivity && (
-            <p className="text-xs text-nyx-soft">Nenhum atendimento registrado neste dia.</p>
+            <p className="text-xs text-nyx-soft">Nenhuma venda registrada neste dia.</p>
           )}
 
           {/* Vencimentos futuros (modo financeiro) */}
           {selDue.length > 0 && (
-            <div className="border-t border-nyx-line/50 pt-3">
+            <div className="border-t border-nyx-line/50 pt-2.5">
               <p className="label-mono text-[9px] text-orange-400 mb-2 flex items-center gap-1.5">
                 <TrendingDown size={11} />
                 Vencimento{selDue.length > 1 ? "s" : ""} neste dia
@@ -317,8 +349,8 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
 
           {/* Gastos do dia */}
           {selGastos.length > 0 && (
-            <div className="border-t border-nyx-line/50 pt-3">
-              <p className="label-mono text-[9px] text-nyx-soft mb-2">Gastos registrados</p>
+            <div className="border-t border-nyx-line/50 pt-2.5">
+              <p className="label-mono text-[9px] text-nyx-soft mb-2">Despesas registradas</p>
               <div className="space-y-1.5">
                 {selGastos.map((g) => (
                   <div key={g.id} className="flex items-center justify-between text-xs">
@@ -339,16 +371,20 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                 onClick={() => setShowAddSale(true)}
                 className="w-full justify-center inline-flex items-center gap-2 label-mono text-[10px] px-3 py-2.5 border border-nyx-line text-nyx-muted hover:text-nyx-ink hover:border-nyx-muted transition-colors"
               >
-                <Plus size={11} />
-                {hasActivity ? "Nova venda" : selectedDate === today ? "Nova venda" : "Adicionar venda retroativa"}
+                <ShoppingCart size={12} />
+                {selOpen.length > 0 || selCaixa
+                  ? "Nova venda"
+                  : selectedDate === today
+                    ? "Primeira venda do dia"
+                    : "Adicionar venda retroativa"}
               </button>
               {isFinanceiro && (
                 <button
-                  onClick={() => setShowAddGasto(true)}
+                  onClick={handleAddGastoClick}
                   className="w-full justify-center inline-flex items-center gap-2 label-mono text-[10px] px-3 py-2.5 border border-red-500/30 text-red-400 hover:border-red-500/60 transition-colors"
                 >
-                  <Plus size={11} />
-                  {hasActivity ? "Despesa do dia" : "Adicionar gasto retroativo"}
+                  <Receipt size={12} />
+                  {selectedDate === today ? "Adicionar despesa" : "Adicionar despesa retroativa"}
                 </button>
               )}
               {selOpen.length > 0 && (
@@ -357,8 +393,18 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
                   onClick={() => handleCloseDate(selectedDate)}
                   className="w-full justify-center inline-flex items-center gap-2 label-mono text-[10px] px-4 py-2.5 border border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors disabled:opacity-40"
                 >
-                  <Lock size={11} />
+                  <Lock size={12} />
                   {pending && closingDate === selectedDate ? "Fechando…" : "Fechar caixa"}
+                </button>
+              )}
+              {selCaixa && (
+                <button
+                  disabled={pending && reopeningId === selCaixa.id}
+                  onClick={() => handleReopen(selCaixa.id)}
+                  className="w-full justify-center inline-flex items-center gap-2 label-mono text-[10px] px-4 py-2.5 border border-nyx-line text-nyx-muted hover:text-nyx-ink hover:border-nyx-muted transition-colors disabled:opacity-40"
+                >
+                  <LockOpen size={12} />
+                  {pending && reopeningId === selCaixa.id ? "Reabrindo…" : "Reabrir caixa"}
                 </button>
               )}
             </div>
@@ -552,7 +598,88 @@ export function CaixaCalendar({ caixas, openOrders, products, gastos: gastosProp
           onClose={() => setEditingOrder(null)}
         />
       )}
+
+      {confirmModal && (
+        <ConfirmModal
+          message={confirmModal.message}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
+
+      {showReopenForGasto && selCaixa && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowReopenForGasto(false)} />
+          <div className="relative z-10 w-full max-w-sm bg-nyx-bg border border-nyx-line p-6 space-y-5">
+            <div className="flex items-start gap-3">
+              <LockOpen size={20} className="text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-nyx-ink font-medium">Caixa deste dia já está fechado</p>
+                <p className="text-xs text-nyx-muted mt-1.5">
+                  Para adicionar uma despesa retroativa é preciso reabrir o caixa primeiro — assim o financeiro do dia é recalculado corretamente com o novo gasto.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowReopenForGasto(false)}
+                className="label-mono text-xs px-4 py-2 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={pending && reopeningId === selCaixa.id}
+                onClick={handleReopenAndAddGasto}
+                className="inline-flex items-center gap-1.5 label-mono text-xs px-5 py-2 bg-amber-500 text-nyx-bg hover:bg-amber-400 transition-colors disabled:opacity-50"
+              >
+                <LockOpen size={13} />
+                {pending && reopeningId === selCaixa.id ? "Reabrindo…" : "Reabrir e adicionar despesa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
+  );
+}
+
+function ConfirmModal({
+  message,
+  onConfirm,
+  onCancel,
+}: {
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
+      <div className="relative z-10 w-full max-w-sm bg-nyx-bg border border-nyx-line p-6 space-y-5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle size={20} className="text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-nyx-ink">{message}</p>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="label-mono text-xs px-4 py-2 border border-nyx-line text-nyx-muted hover:text-nyx-ink transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="label-mono text-xs px-5 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

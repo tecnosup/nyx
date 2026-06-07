@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
 
 const WHATSAPP_URL = "https://wa.me/5512991014865";
@@ -48,16 +47,13 @@ export default function AdminErrorBoundary({
           <button onClick={reset} className="btn-primary">
             Tentar de novo
           </button>
-          <Link href="/admin" className="btn-ghost">
-            Voltar ao painel
-          </Link>
 
           <div className="flex gap-3 mt-2">
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-2 label-mono text-xs py-3 border border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 label-mono text-[10px] py-3 border border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
             >
               <WhatsAppIcon />
               Tecnosup
@@ -66,7 +62,7 @@ export default function AdminErrorBoundary({
               href={INSTAGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-2 label-mono text-xs py-3 border border-nyx-line text-nyx-muted hover:border-nyx-ink hover:text-nyx-ink transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 label-mono text-[10px] py-3 border border-nyx-line text-nyx-muted hover:border-nyx-ink hover:text-nyx-ink transition-colors"
             >
               <InstagramIcon />
               @tecnosuporte

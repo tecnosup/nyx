@@ -3,11 +3,11 @@ import { listProducts } from "@/lib/products";
 import { listDrops } from "@/lib/drops";
 import { totalStock } from "@/lib/types";
 import { adminOrderStats, adminListOrders } from "@/lib/admin-orders";
-import { adminListCaixas } from "@/lib/admin-caixa";
+import { adminListCaixas, adminGetOpenCaixaDates } from "@/lib/admin-caixa";
 import { adminGastoStats, adminListGastos } from "@/lib/admin-gastos";
 import { formatPrice } from "@/lib/utils";
 import {
-  AlertTriangle, ArrowRight, Clock, CheckCheck, XCircle, MessageCircle,
+  AlertTriangle, ArrowRight, Clock, CheckCheck, XCircle, MessageCircle, LockOpen,
 } from "lucide-react";
 import { QuickSaleButton } from "@/components/admin/QuickSaleButton";
 import { DashboardChart } from "@/components/admin/DashboardChart";
@@ -15,6 +15,10 @@ import { SitePreviewCard } from "@/components/admin/SitePreviewCard";
 import { SITE_CONFIG } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
+
+function fmtBR(iso: string) {
+  return iso.split("-").reverse().join("/");
+}
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pendente",
@@ -41,7 +45,7 @@ export default async function AdminDashboardPage() {
     weekday: "long", day: "numeric", month: "long",
   });
 
-  const [products, drops, orderStats, recentOrders, caixas, gastos, gastoStats] = await Promise.all([
+  const [products, drops, orderStats, recentOrders, caixas, gastos, gastoStats, openCaixaDates] = await Promise.all([
     listProducts(),
     listDrops(),
     adminOrderStats(),
@@ -49,6 +53,7 @@ export default async function AdminDashboardPage() {
     adminListCaixas(30),
     adminListGastos(),
     adminGastoStats(),
+    adminGetOpenCaixaDates(),
   ]);
 
   const totalUnits = products.reduce((sum, p) => sum + totalStock(p), 0);
@@ -101,6 +106,24 @@ export default async function AdminDashboardPage() {
             </p>
           </div>
           <ArrowRight size={15} className="text-amber-500 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      )}
+
+      {/* ── Alert: caixa em aberto de dia anterior ── */}
+      {openCaixaDates.length > 0 && (
+        <Link
+          href="/admin/pedidos"
+          className="flex items-center justify-between gap-3 border border-red-500/50 bg-red-500/5 px-5 py-3.5 hover:bg-red-500/10 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <LockOpen size={16} className="text-red-400 shrink-0" />
+            <p className="text-sm text-red-400 font-medium">
+              {openCaixaDates.length === 1
+                ? `Caixa do dia ${fmtBR(openCaixaDates[0])} ficou aberto e precisa ser fechado`
+                : `${openCaixaDates.length} caixas de dias anteriores ficaram abertos e precisam ser fechados`}
+            </p>
+          </div>
+          <ArrowRight size={15} className="text-red-400 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       )}
 

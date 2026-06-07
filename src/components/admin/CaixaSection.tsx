@@ -14,8 +14,9 @@ interface Props {
   gastos?: Gasto[];
   isFinanceiro?: boolean;
   gastoCategories?: GastoCategoryItem[];
+  initialSelectedDate?: string;
 }
 
-export function CaixaSection({ caixas, openOrders, products, gastos, isFinanceiro, gastoCategories }: Props) {
-  return <CaixaCalendar caixas={caixas} openOrders={openOrders} products={products} gastos={gastos} isFinanceiro={isFinanceiro} gastoCategories={gastoCategories} />;
+export function CaixaSection({ caixas, openOrders, products, gastos, isFinanceiro, gastoCategories, initialSelectedDate }: Props) {
+  return <CaixaCalendar caixas={caixas} openOrders={openOrders} products={products} gastos={gastos} isFinanceiro={isFinanceiro} gastoCategories={gastoCategories} initialSelectedDate={initialSelectedDate} />;
 }

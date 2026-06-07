@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import {
   ChevronDown, ChevronUp, CheckCircle, XCircle, Clock,
-  MessageCircle, CheckCheck, Pencil, Plus, Trash2, X,
+  MessageCircle, CheckCheck, Pencil, Plus, Trash2, X, CalendarDays,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -32,6 +33,14 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 
 
 const PAYMENT_OPTIONS: PaymentMethod[] = ["pix", "cartao", "transferencia", "combinar"];
+
+function orderCaixaDate(order: Order): string {
+  if (order.saleDate) return order.saleDate;
+  return new Date(order.createdAt).toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).split("/").reverse().join("-");
+}
 
 function whatsappConfirmUrl(order: Order): string {
   const phone = `55${order.customerPhone.replace(/\D/g, "")}`;
@@ -271,6 +280,16 @@ function OrderRow({ order, products, isOpen, onToggle, onDeleted }: { order: Ord
                   <CheckCheck size={13} />
                   Concluir
                 </button>
+              )}
+
+              {localStatus === "completed" && order.caixaId && (
+                <Link
+                  href={`/admin/financeiro?caixaDate=${orderCaixaDate(order)}#agenda-caixa`}
+                  className="inline-flex items-center gap-1.5 label-mono text-xs px-4 py-2 border border-nyx-line text-nyx-muted hover:border-nyx-muted hover:text-nyx-ink transition-colors"
+                >
+                  <CalendarDays size={13} />
+                  Ver no caixa
+                </Link>
               )}
 
               <button

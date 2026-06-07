@@ -1,5 +1,5 @@
 import { adminListGastos, adminGastoStats, adminListGastoCategories } from "@/lib/admin-gastos";
-import { adminListCaixas } from "@/lib/admin-caixa";
+import { adminListCaixas, adminGetOpenCaixaDates } from "@/lib/admin-caixa";
 import { adminListOrders, adminOrderStats } from "@/lib/admin-orders";
 import { listProducts } from "@/lib/products";
 import { formatPrice } from "@/lib/utils";
@@ -8,6 +8,8 @@ import { FinanceiroCharts } from "@/components/admin/FinanceiroCharts";
 import { DashboardChart } from "@/components/admin/DashboardChart";
 import { GastoReminderBanner } from "@/components/admin/GastoReminderBanner";
 import { CaixaSection } from "@/components/admin/CaixaSection";
+import { CaixaHistoryList } from "@/components/admin/CaixaHistoryList";
+import { OpenCaixaBanner } from "@/components/admin/OpenCaixaBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +20,14 @@ const FREQUENCY_LABELS: Record<string, string> = {
   avulso: "Avulso",
 };
 
-export default async function FinanceiroPage() {
-  const [gastos, gastoStats, caixas, orderStats, gastoCategories, orders, products] = await Promise.all([
+export default async function FinanceiroPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ caixaDate?: string }>;
+}) {
+  const { caixaDate } = await searchParams;
+
+  const [gastos, gastoStats, caixas, orderStats, gastoCategories, orders, products, openCaixaDates] = await Promise.all([
     adminListGastos(),
     adminGastoStats(),
     adminListCaixas(),
@@ -27,6 +35,7 @@ export default async function FinanceiroPage() {
     adminListGastoCategories().catch(() => [] as Awaited<ReturnType<typeof adminListGastoCategories>>),
     adminListOrders(200).catch(() => []),
     listProducts().catch(() => []),
+    adminGetOpenCaixaDates(),
   ]);
 
   const openCaixaOrders = orders.filter((o) => o.status === "completed" && !o.caixaId);
@@ -48,6 +57,7 @@ export default async function FinanceiroPage() {
         </p>
       </div>
 
+      <OpenCaixaBanner dates={openCaixaDates} />
       <GastoReminderBanner gastos={gastos} />
 
       {/* KPIs */}
@@ -58,68 +68,14 @@ export default async function FinanceiroPage() {
         <Kpi label="Receita total (pedidos)" value={formatPrice(orderStats.revenuePix)} />
       </div>
 
-      {/* Gráficos */}
-      <div className="grid md:grid-cols-[1fr_320px] gap-4 mb-12">
-        <div className="border border-nyx-line p-5">
-          <p className="label-mono text-[10px] text-nyx-muted mb-4">Faturamento por fechamento de caixa</p>
-          <DashboardChart caixas={caixas} gastos={gastos} />
-        </div>
-        <FinanceiroCharts gastos={gastos} categories={gastoCategories} />
+      {/* Faturamento por fechamento de caixa */}
+      <div className="border border-nyx-line p-5 mb-4">
+        <p className="label-mono text-[10px] text-nyx-muted mb-4">Faturamento por fechamento de caixa</p>
+        <DashboardChart caixas={caixas} gastos={gastos} />
       </div>
 
-      {/* Histórico de caixas */}
-      <section className="mb-16">
-        <div className="border border-nyx-line">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-nyx-line">
-            <h2 className="heading-display text-xl">Fechamentos de caixa</h2>
-            <span className="label-mono text-[9px] text-nyx-soft">{caixas.length} fechamento{caixas.length !== 1 ? "s" : ""}</span>
-          </div>
-          {caixas.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="label-mono text-nyx-muted text-xs">Nenhum fechamento ainda.</p>
-            </div>
-          ) : (
-            <div className="max-h-[480px] overflow-y-auto scrollbar-thin divide-y divide-nyx-line">
-              {caixas.map((c) => (
-                <div key={c.id} className="px-5 py-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm items-center">
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Data</p>
-                    <p className="text-nyx-ink">{c.date.split("-").reverse().join("/")}</p>
-                  </div>
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pedidos</p>
-                    <p className="text-nyx-ink">{c.orderCount}</p>
-                  </div>
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Pix</p>
-                    <p className="text-nyx-ink">{formatPrice(c.totalPix)}</p>
-                  </div>
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Cartão</p>
-                    <p className="text-nyx-ink">{formatPrice(c.totalCard)}</p>
-                  </div>
-                  <div>
-                    <p className="label-mono text-[9px] text-nyx-muted mb-0.5">Total</p>
-                    <p className="text-nyx-ink font-medium">{formatPrice(c.totalGeral)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Gastos */}
-      <section className="mb-16">
-        <GastosManager
-          gastos={gastos}
-          categories={gastoCategories}
-          frequencyLabels={FREQUENCY_LABELS}
-        />
-      </section>
-
       {/* Agenda */}
-      <section className="mb-16">
+      <section id="agenda-caixa" className="mb-12 scroll-mt-6">
         <CaixaSection
           caixas={caixas}
           pendingCount={openCaixaOrders.length}
@@ -128,6 +84,33 @@ export default async function FinanceiroPage() {
           gastos={gastos}
           isFinanceiro
           gastoCategories={gastoCategories}
+          initialSelectedDate={caixaDate}
+        />
+      </section>
+
+      {/* Gastos por categoria + Fechamentos de caixa */}
+      <div className="grid md:grid-cols-2 gap-4 mb-12">
+        <FinanceiroCharts gastos={gastos} categories={gastoCategories} />
+        <div className="border border-nyx-line">
+          <div className="px-5 py-4 border-b border-nyx-line">
+            <p className="label-mono text-[10px] text-nyx-muted">Fechamentos de caixa</p>
+          </div>
+          {caixas.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="label-mono text-nyx-muted text-xs">Nenhum fechamento ainda.</p>
+            </div>
+          ) : (
+            <CaixaHistoryList caixas={caixas} />
+          )}
+        </div>
+      </div>
+
+      {/* Gastos */}
+      <section className="mb-16">
+        <GastosManager
+          gastos={gastos}
+          categories={gastoCategories}
+          frequencyLabels={FREQUENCY_LABELS}
         />
       </section>
     </div>

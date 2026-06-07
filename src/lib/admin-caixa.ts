@@ -1,6 +1,10 @@
 import "server-only";
 import { adminDb } from "./firebase-admin";
-import type { Order } from "./admin-orders";
+import {
+  adminGetPendingCaixaOrders,
+  adminMarkOrdersInCaixa,
+  type Order,
+} from "./admin-orders";
 
 const COLLECTION = "caixas";
 
@@ -100,6 +104,52 @@ export async function adminReopenCaixa(caixaId: string): Promise<string[]> {
   const caixa = { id: doc.id, ...doc.data() } as Caixa;
   await adminDb().collection(COLLECTION).doc(caixaId).delete();
   return caixa.orderIds;
+}
+
+// Closes the caixa for every past day (before today, America/Sao_Paulo) that
+// still has completed orders without a caixaId. Used by the daily cron job —
+// any day left open by the admin is auto-closed at the end of the following day's run.
+export async function adminAutoCloseStaleCaixas(): Promise<Array<{ date: string; count: number; total: number }>> {
+  const today = new Date().toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).split("/").reverse().join("-");
+
+  const pending = await adminGetPendingCaixaOrders();
+  const stale = pending.filter((o) => getOrderDate(o) < today);
+  if (stale.length === 0) return [];
+
+  const groups = await adminCloseCaixa(stale);
+  for (const { caixaId, orderIds } of groups) {
+    await adminMarkOrdersInCaixa(orderIds, caixaId);
+  }
+
+  const byDate: Record<string, Order[]> = {};
+  for (const o of stale) (byDate[getOrderDate(o)] ??= []).push(o);
+
+  return Object.entries(byDate).map(([date, dateOrders]) => ({
+    date,
+    count: dateOrders.length,
+    total: dateOrders.reduce((s, o) => s + o.totalPix, 0),
+  }));
+}
+
+// Returns the distinct dates (before today, America/Sao_Paulo) that still have
+// completed orders without a caixaId — i.e. caixas que deveriam ter sido
+// fechados ao virar o dia. Usado para alertar o admin no painel.
+export async function adminGetOpenCaixaDates(): Promise<string[]> {
+  const today = new Date().toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).split("/").reverse().join("-");
+
+  const pending = await adminGetPendingCaixaOrders();
+  const dates = new Set<string>();
+  for (const o of pending) {
+    const d = getOrderDate(o);
+    if (d < today) dates.add(d);
+  }
+  return [...dates].sort();
 }
 
 export async function adminListCaixas(limitCount?: number): Promise<Caixa[]> {

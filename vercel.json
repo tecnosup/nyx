@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/fechar-caixa",
+      "schedule": "59 2 * * *"
+    }
+  ]
+}
